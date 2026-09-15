@@ -1,0 +1,604 @@
+/* ═══════════════════════════════════════════════════════════
+   DESIGN4 V2 PATCH — AI-Native Glow + macOS/Windows Compliance + Mobile RWD
+   ─────────────────────────────────────────────────────────
+   1. AI 光圈：紫→青 conic-gradient 動態圍邊（6s 一圈），.is-thinking 增強
+   2. macOS HIG：focus-visible、Vibrancy 磨砂玻璃、Traffic-light 安全區
+   3. Windows Fluent：Segoe UI Variable、4px/8px 圓角拆分、Reveal、Acrylic、40px 觸控
+   4. Mobile RWD：safe-area、16px 輸入防縮放、sticky 操作區、KPI 降級、表格橫滾
+
+   必須喺 design4-overrides.css 之後載入。
+   ═══════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────
+   1. AI 光圈 — 紫→青動態漸變圍邊
+   #7C5CFC → #22D3EE（2025-26 AI 產品視覺共識）
+   ──────────────────────────────────────────────── */
+@property --ai-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* 通用 class：任何 AI 元素加 .ai-glow 即有光圈 */
+.ai-glow {
+  position: relative;
+}
+
+.ai-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--ai-angle), #7C5CFC, #22D3EE, #7C5CFC);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: .45;
+  pointer-events: none;
+  animation: ai-angle-spin 6s linear infinite;
+  transition: opacity .3s ease;
+  z-index: 1;
+}
+
+.ai-glow:hover::before,
+.ai-glow.is-thinking::before {
+  opacity: 1;
+}
+
+.ai-glow.is-thinking {
+  animation: ai-think-pulse 1.6s ease-in-out infinite;
+}
+
+/* 內建 AI 表面：AI Brief 卡自動套用（唔使逐個加 class）
+   注意：.cb-panel 唔可以喺呢度 — 佢係 fixed overlay，
+   加入會令 AI chat panel 變 relative 而推冧成個版面 */
+.chat-panel,
+.ai-brief-card,
+.ab-panel-card,
+.briefing-card,
+.ai-card {
+  position: relative;
+}
+
+/* AI Briefing 一體光圈 — wrapper 跟 trigger/panel 嘅圓角形狀 */
+.ai-brief-card {
+  border-radius: var(--radius-lg);
+}
+
+/* ── AI Briefing — trigger + panel 合併為一個卡（紫色 → 藍色） ── */
+.ai-brief-card {
+  border: 1px solid var(--color-divider);
+  background: var(--color-surface);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+/* Trigger = card header（透明，hover 藍色 tint） */
+.ab-trigger {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 8%, transparent), color-mix(in srgb, var(--color-primary) 4%, transparent));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border: none;
+}
+.ab-trigger:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, transparent), color-mix(in srgb, var(--color-primary) 7%, transparent));
+}
+
+/* Pulse orb — 藍色系 */
+.ab-orb-pulse {
+  background: radial-gradient(circle, #62C0B0, #1B3B4B);
+  box-shadow: 0 0 0 0 rgba(20, 110, 245, .45);
+}
+.ab-orb-sparkles {
+  color: #1B3B4B;
+}
+
+/* Trigger pill — 藍色 */
+.ab-trigger-pill {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+/* Panel card = card body（透明，同 header 無縫接合） */
+.ab-panel-card {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  margin-top: 0;
+}
+
+.chat-panel::before,
+.cb-panel::before,
+.cb-panel--desktop::before,
+.cb-panel--mobile::before,
+.ai-brief-card::before,
+.ab-panel-card::before,
+.briefing-card::before,
+.ai-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--ai-angle), #7C5CFC, #22D3EE, #7C5CFC);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: .4;
+  pointer-events: none;
+  animation: ai-angle-spin 6s linear infinite;
+  transition: opacity .3s ease;
+  z-index: 1;
+}
+
+.chat-panel:hover::before,
+.cb-panel:hover::before,
+.ai-brief-card:hover::before,
+.ab-panel-card:hover::before,
+.ai-card:hover::before,
+.chat-panel.is-thinking::before,
+.cb-panel.is-thinking::before,
+.ai-brief-card.is-thinking::before,
+.ab-panel-card.is-thinking::before,
+.ai-card.is-thinking::before {
+  opacity: 1;
+}
+
+.cb-panel.is-thinking,
+.chat-panel.is-thinking,
+.ai-brief-card.is-thinking,
+.ab-panel-card.is-thinking,
+.ai-card.is-thinking {
+  animation: ai-think-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ai-angle-spin {
+  to { --ai-angle: 360deg; }
+}
+
+@keyframes ai-think-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 92, 252, .22); }
+  50% { box-shadow: 0 0 26px 4px rgba(34, 211, 238, .32); }
+}
+
+/* 尊重動態減弱設定 */
+@media (prefers-reduced-motion: reduce) {
+  .ai-glow::before,
+  .chat-panel::before,
+  .cb-panel::before,
+  .cb-panel--desktop::before,
+  .cb-panel--mobile::before,
+  .ai-brief-card::before,
+  .ab-panel-card::before,
+  .briefing-card::before,
+  .ai-card::before {
+    animation: none;
+  }
+  .ai-glow.is-thinking,
+  .cb-panel.is-thinking,
+  .chat-panel.is-thinking,
+  .ai-brief-card.is-thinking,
+  .ab-panel-card.is-thinking {
+    animation: none;
+  }
+}
+
+/* ────────────────────────────────────────────────
+   2. macOS HIG
+   ──────────────────────────────────────────────── */
+
+/* 2a. Focus ring — 全鍵盤操作清晰可見（原有 2px 基礎上平滑過渡） */
+:focus-visible {
+  outline: 2px solid #7C5CFC;
+  outline-offset: 2px;
+  transition: outline-color .15s ease;
+}
+
+/* 2b. Vibrancy — Sidebar / Topbar 磨砂玻璃（Light/Dark 各自透明度） */
+:root [data-theme="light"] .sidebar,
+[data-theme="light"] .sidebar,
+:root .sidebar,
+.sidebar {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(20px);
+  backdrop-filter: saturate(1.6) blur(20px);
+}
+
+:root [data-theme="dark"] .sidebar,
+[data-theme="dark"] .sidebar {
+  background: color-mix(in srgb, var(--color-surface) 74%, transparent);
+}
+
+:root [data-theme="light"] .topbar,
+[data-theme="light"] .topbar,
+:root .topbar,
+.topbar {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(20px);
+  backdrop-filter: saturate(1.6) blur(20px);
+}
+
+:root [data-theme="dark"] .topbar,
+[data-theme="dark"] .topbar {
+  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
+}
+
+/* 2c. Traffic-light 安全區 — 包裝成 Electron/Tauri 時喺 <html> 加 data-platform="macos" */
+[data-platform="macos"] .sidebar-brand {
+  padding-left: 84px;
+}
+
+[data-platform="macos"] .topbar {
+  padding-left: 84px;
+}
+
+/* ────────────────────────────────────────────────
+   3. Windows Fluent / WinUI
+   ──────────────────────────────────────────────── */
+
+/* 3a. Segoe UI Variable — Windows 原生字體優先，其他平台自動回落 Space Grotesk/Inter */
+/* v6.77: 加中文 fallback（PingFang HK / Microsoft JhengHei / Noto Sans TC）統一繁中渲染 */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --font-display: 'Segoe UI Variable Display', 'Space Grotesk', 'General Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang HK', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+  --font-body: 'Segoe UI Variable Text', 'Inter', 'General Sans', -apple-system, BlinkMacSystemFont, 'PingFang HK', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+}
+
+/* 3b. Corner radius 拆分 — 小型控制 4px，卡片 8px */
+.icon-btn,
+.toolbar-btn,
+.topbar-hamburger,
+.topbar-search-icon,
+.cv-view-trigger {
+  border-radius: 4px;
+}
+
+.nav-item {
+  border-radius: 4px;
+}
+
+/* 3c. Reveal Highlight — 滑鼠移近光斑（只喺 pointer:fine + hover 環境觸發） */
+@media (pointer: fine) and (hover: hover) {
+  .nav-item,
+  .icon-btn,
+  .toolbar-btn,
+  .btn-primary,
+  .btn-secondary {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-item::after,
+  .icon-btn::after,
+  .toolbar-btn::after,
+  .btn-primary::after,
+  .btn-secondary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(140% 140% at 50% 0%, rgba(255, 255, 255, .30), transparent 55%);
+    opacity: 0;
+    transition: opacity .15s ease;
+    pointer-events: none;
+  }
+
+  .nav-item:hover::after,
+  .icon-btn:hover::after,
+  .toolbar-btn:hover::after,
+  .btn-primary:hover::after,
+  .btn-secondary:hover::after {
+    opacity: 1;
+  }
+}
+
+/* 3d. Acrylic — Flyout/Dropdown 背景（Light mode 加 3% primary 色調混色） */
+:root [data-theme="light"] .notif-dropdown,
+[data-theme="light"] .notif-dropdown,
+:root .notif-dropdown,
+.notif-dropdown,
+:root [data-theme="light"] .cv-view-menu,
+[data-theme="light"] .cv-view-menu,
+:root .cv-view-menu,
+.cv-view-menu,
+:root [data-theme="light"] .new-dropdown,
+[data-theme="light"] .new-dropdown,
+:root .new-dropdown,
+.new-dropdown {
+  background: color-mix(in srgb, var(--color-surface) 84%, var(--color-primary) 3%);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+/* 3e. 觸控目標 — 全域 icon-btn / nav-item / toolbar-btn 升到 40×40px */
+.icon-btn,
+.toolbar-btn,
+.nav-item {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+/* ────────────────────────────────────────────────
+   4. Mobile Responsive 強化
+   ──────────────────────────────────────────────── */
+
+/* 4a. 觸控裝置 — 所有互動元件 40px → 44px（iOS 標準） */
+@media (pointer: coarse) {
+  .icon-btn,
+  .toolbar-btn,
+  .nav-item,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .cv-view-trigger,
+  .month-more-item {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 4b. Safe Area — iPhone 缺口 / 動態島 + Android 手勢列 */
+.sidebar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.topbar {
+  padding-left: calc(20px + env(safe-area-inset-left));
+  padding-right: calc(20px + env(safe-area-inset-right));
+}
+
+.month-more-popup,
+.chat-panel,
+.cb-panel {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 4c. iOS 縮放防護 — <768px 輸入框強制 16px，防止 Safari 自動放大版面 */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* 4d. 底部固定操作區 — .header-actions 喺 mobile 變 sticky bottom */
+@media (max-width: 767px) {
+  .header-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-divider);
+    margin-top: 8px;
+  }
+}
+
+/* 4e. KPI Grid 降級 — 桌面 4 欄 → 平板 2 欄 → 手機 1 欄 */
+@media (min-width: 769px) {
+  .dash01-shell .grid { grid-template-columns: repeat(12, 1fr); }
+}
+
+@media (max-width: 1024px) and (min-width: 641px) {
+  .dash01-shell .grid { grid-template-columns: repeat(6, 1fr); }
+  .dash01-shell .widget[data-key^="kpi_"] {
+    grid-column: span 3 !important;
+    aspect-ratio: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .dash01-shell .grid { grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  /* 非 KPI widgets 維持全寬，排最後 (order 3)，唔好隔開 KPI 區 */
+  .dash01-shell .widget:not([data-key^="kpi_"]) {
+    order: 3 !important;
+    grid-column: 1 / -1 !important;
+  }
+  .dash01-shell .add-widget-tile { grid-column: 1 / -1 !important; order: 3 !important; }
+  /* KPI cards — 公司總數(Companies)、待辦任務(Tasks) & 累計客戶(Contacts) 並排大格 (span 3)，排第一行 (order 1) */
+  .dash01-shell .widget[data-key="kpi_companies"],
+  .dash01-shell .widget[data-key="kpi_tasks"],
+  .dash01-shell .widget[data-key="kpi_contacts"] {
+    order: 1 !important;
+    grid-column: span 3 !important;
+    aspect-ratio: auto;
+  }
+  /* 其餘 KPI (deals) 細格 */
+  .dash01-shell .widget[data-key^="kpi_"]:not([data-key="kpi_companies"]):not([data-key="kpi_tasks"]):not([data-key="kpi_contacts"]) {
+    order: 2 !important;
+    grid-column: span 2 !important;
+    aspect-ratio: auto;
+  }
+}
+
+/* 4f. 表格橫向滾動 — <480px 時 min-width 560px 允許橫滑 */
+@media (max-width: 479px) {
+  .data-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table table {
+    min-width: 560px;
+  }
+}
+
+/* 4g. 摺疊裝置 / 橫向平板 — 769-1024px landscape Sidebar 收窄至 200px */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  :root {
+    --sidebar-w: 200px;
+  }
+  .sidebar-brand span {
+    font-size: 15px;
+  }
+  .nav-item {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* ────────────────────────────────────────────────
+   5. iOS HIG Standard — Typography / Spacing / Touch Targets
+   2026-08-06 — Contact page + Detail page iOS 標準調整
+   ──────────────────────────────────────────────── */
+
+/* 5a. Input 16px 防 iOS zoom + 44px 觸控高度 */
+.input-field {
+  height: 44px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+textarea.input-field {
+  height: auto;
+  min-height: 88px;
+  line-height: 1.5;
+}
+
+/* 5b. Button 44px 觸控目標（iOS HIG minimum） */
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-notification {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+.btn-ghost {
+  min-height: 44px;
+  font-size: 15px;
+  padding: 0 12px;
+}
+
+/* 5c. Field label — footnote 13px → 14px，行距加大 */
+.field-label {
+  font-size: 14px;
+  margin-bottom: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* 5d. Field value — body 17px（iOS body minimum） */
+.field-value {
+  font-size: 17px;
+  line-height: 1.5;
+  min-height: 28px;
+  padding: 6px 0;
+}
+
+/* 5e. Form field 行距 — 8pt grid */
+.form-field {
+  gap: 8px;
+}
+.detail-form-grid {
+  gap: 24px 20px;
+}
+
+/* 5f. Page header — title1 28px（iOS large title 降級） */
+.page-header h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.page-header p {
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+/* 5g. Tabs — 44px 高度 + subheadline 15px */
+.tabs .tab {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 5h. Profile card — 字體 scale 提升 */
+.profile-card h3 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+.profile-card .role {
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+.profile-field {
+  font-size: 15px;
+  padding: 10px 0;
+  gap: 10px;
+}
+.profile-field svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 5i. Data table — 行距 + 字體 readability */
+.data-table th {
+  font-size: 12px;
+  padding: 12px 14px;
+}
+.data-table td {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 6px 14px;
+}
+
+/* 5j. Summary / list 行距 */
+.summary-item {
+  padding: 12px 0;
+}
+.summary-item .lbl {
+  font-size: 14px;
+}
+.list-row {
+  padding: 14px 18px;
+}
+.list-title {
+  font-size: 15px;
+  line-height: 1.4;
+}
+.list-sub {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* 5k. Checkbox 44px hit area（iOS 觸控） */
+.checkbox-label {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-surface-offset);
+  font-size: 14px;
+}
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+}
+.row-checkbox {
+  width: 20px;
+  height: 20px;
+}
+
+/* 5l. Modal footer buttons 統一高度 */
+.modal-foot .btn-primary,
+.modal-foot .btn-secondary,
+.modal-foot .btn-notification {
+  min-height: 44px;
+  font-size: 15px;
+}
+
+/* 5m. 小螢幕（<480px）再壓縮 — 保持 44px 但減 padding */
+@media (max-width: 479px) {
+  .page-header h1 { font-size: 22px; }
+  .field-value { font-size: 16px; }
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-notification { padding: 0 14px; font-size: 14px; }
+}

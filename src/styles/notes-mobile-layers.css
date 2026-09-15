@@ -1,0 +1,163 @@
+/**
+ * Notes mobile bottom-layer ownership（2026-09-13）
+ *
+ * mobile Notes P0-2 / P0-4：global Penguin bottom nav 一直顯示喺 notebook drawer、
+ * create sheet、editor、block sheet 下邊 → 同一時間 2-3 層搶同一塊 bottom 區域
+ * （連埋 browser chrome 同 software keyboard）。
+ *
+ * 修法：NotesWorkspacePage 用單一 mobile 狀態機（src/lib/notesMobileState.ts）＋
+ * 喺 <body> 加 `nw-nav-hidden`，由 CSS 一手收埋 global nav。唔加第二個 modal manager。
+ * `[data-notes-state]` = 目前狀態（list｜drawer｜create｜editor｜sort｜more），
+ * 亦係 Playwright probe 嘅斷言點。
+ */
+
+/* P0-2：任何 blocking layer 擁有畫面 → global bottom nav 完全收埋。
+   display:none 同時令佢唔可以被 focus／撳到（唔止視覺上遮住）。 */
+body.nw-nav-hidden .mnav-bar { display: none !important; }
+
+@media (max-width: 900px) {
+  /* P0-4：immersive editor —— nav 收埋之後，editor body 唔應該再為 nav 留位，
+     只留 safe-area（否則底部一截空白，keyboard 彈起時再擠壓一次）。 */
+  .nw-page[data-notes-state='editor'] .nw-ed-body {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  /* P0-2：blocking sheet 開嘅時候底層唔應該再 scroll（避免背景滾動同 keyboard 打架） */
+  .nw-page[data-notes-state='create'],
+  .nw-page[data-notes-state='drawer'],
+  .nw-page[data-notes-state='sort'],
+  .nw-page[data-notes-state='more'] {
+    overscroll-behavior: contain;
+  }
+
+  /* P0-3：native select 只留桌面（mobile 用 .nw-meta-btn 開 app bottom sheet） */
+  .nw-sort-select { display: none !important; }
+  .nw-meta-btn {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px;
+    border: 1px solid var(--color-divider); border-radius: 10px;
+    background: var(--color-surface); color: var(--color-text);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+}
+
+/* ── P0-3：app-style bottom sheet（AppBottomSheet.tsx）────────────────────
+   一個 sheet = 一個 bottom owner；scrim 蓋住 list 同 global nav。 */
+
+/* 桌面用返 native select，所以 meta button 只喺 mobile 出現。
+   ⚠️ 一定要用 min-width 媒體查詢，唔可以喺頂層寫 `.nw-meta-btn{display:none}` ——
+   同一個 file 內後出現嘅同名 rule 會蓋過上面 ≤900px 嘅 display:inline-flex
+   （2026-09-13 實測踩過：button 永遠隱形 → Playwright click timeout）。 */
+@media (min-width: 901px) {
+  .nw-meta-btn { display: none; }
+}
+
+.nwbs-scrim {
+  /* ⚠️ 2026-09-13 實測修正：原本 80 —— 低過全域底部 nav（mobile-nav-v3.css: 800/900），
+     喺 Notes 首頁（冇 workspace 個 data-notes-state 機制）nav 仍然顯示 → 蓋住 sheet
+     底部嘅「建立 Notebook」掣 → 撳唔到（Playwright：element intercepts pointer events；
+     network 只有 GET /notebooks、冇 POST）。提升到 app modal 層（1000/1001）。 */
+  position: fixed; inset: 0; z-index: 1000;
+  border: none; padding: 0; cursor: pointer;
+  background: rgba(0, 0, 0, .45);
+}
+
+.nwbs-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+  background: var(--color-surface); color: var(--color-text);
+  border-radius: 16px 16px 0 0;
+  /* P0-4：鍵盤升起時（--kb-inset）sheet 要坐落鍵盤上面，唔好被蓋住 */
+  padding: 10px 16px calc(var(--kb-inset, 0px) + env(safe-area-inset-bottom, 0px) + 16px);
+  max-height: 80dvh; overflow-y: auto; overscroll-behavior: contain;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, .18);
+}
+
+/* 2026-09-13：桌面版 sheet = 右下角浮動面板（原本係全闊底部橫條，喺 1440px 好突兀）。
+   mobile 繼續用真 bottom sheet（上面規則不變）。 */
+@media (min-width: 901px) {
+  .nwbs-sheet {
+    left: auto; right: 24px; bottom: 24px;
+    width: min(400px, calc(100vw - 48px));
+    border-radius: 16px;
+    max-height: min(70vh, 640px);
+    padding: 12px 18px 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .22);
+  }
+}
+
+.nwbs-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 44px;
+}
+
+.nwbs-radios { display: flex; flex-direction: column; gap: 4px; }
+
+.nwbs-radio {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 48px; padding: 0 12px;
+  border: none; border-radius: 10px; background: transparent;
+  color: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.nwbs-radio.is-checked { background: var(--color-surface-2, rgba(0, 0, 0, .05)); font-weight: 700; }
+.nwbs-radio-mark { color: var(--color-blue, #2563eb); font-weight: 800; }
+
+/* ── P1-⑪：editor「更多」sheet 嘅 action rows（2026-09-13）────────────────
+   pin／移動 notebook／版本紀錄／刪除 由頂欄搬入 sheet；44px 觸控目標（spec P0-5）。 */
+.nwbs-actions { display: flex; flex-direction: column; gap: 2px; }
+.nwbs-action {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: 44px; padding: 0 12px; border: none; border-radius: 10px;
+  background: none; color: var(--color-text); font-size: 15px; text-align: left;
+}
+.nwbs-action:active { background: var(--color-surface-offset); }
+/* 第一個 span 係 label（icon 係 svg，唔受影響）→ 俾佢撐開，mark 靠右 */
+.nwbs-action > span:first-of-type { flex: 1 1 auto; min-width: 0; }
+.nwbs-action-mark { color: var(--color-blue, #2563eb); font-weight: 700; }
+.nwbs-action.is-danger { color: var(--color-danger, #dc2626); }
+
+/* ── P1：mobile list header 收窄（2026-09-13）────────────────────────────
+   Row1 = notebook 掣 + 標題 + 篇數；Row2 = 全闊 search + 尾隨排序控制。
+   原本第二行（排序 select + 檢視切換）喺 mobile 全行收埋 → 筆記列表緊接 search 出現，
+   唔再有一行永久 white-row 佔住 first screen。
+   註：檢視切換（list/card/compact）喺 mobile 收埋 = 有意嘅取捨 —— 390px 下手機一律用
+   列表 row，詳見 migration note；桌面完全不受影響。 */
+@media (max-width: 900px) {
+  .nw-toolbar-meta { display: none; }
+  /* 新筆記掣收做 icon（讓位俾 search + 排序），仍保持 44px 觸控尺寸 */
+  .nw-new-btn { min-width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+  .nw-new-btn span { display: none; }
+}
+
+/* ── P1-⑥：editor 頂欄壓到 52–56px（spec，2026-09-13）─────────────────────
+   原本 .nw-ed-head 係兩行（title input 一行 + .nw-meta-row 一行）= 89px。
+   手機改成一行：back（44px）｜title（flex，16px 防 iOS zoom）｜儲存狀態｜⋯。
+   用 display:contents 拆開 .nw-meta-row，再用 order 排返正確次序。
+   日期（.nw-meta-row 內非儲存狀態嘅 span）手機收埋 —— 慳位，Less is more。 */
+@media (max-width: 900px) {
+  .nw-page .nw-ed-head {
+    display: flex; align-items: center; gap: 2px;
+    padding: 5px 6px; min-height: 54px;
+  }
+  .nw-page .nw-ed-head .nw-meta-row { display: contents; }
+  .nw-page .nw-ed-head .nw-back-btn { order: 1; flex: 0 0 auto; }
+  .nw-page .nw-ed-head .nw-title-input { order: 2; flex: 1 1 auto; min-width: 0; font-size: 16px; }
+  .nw-page .nw-ed-head .nw-save-status { order: 3; flex: 0 0 auto; }
+  .nw-page .nw-ed-head .nw-meta-row > span:not(.nw-save-status) { display: none; }
+  .nw-page .nw-ed-head .nw-spacer { display: none; }
+  .nw-page .nw-ed-head .nw-icon-btn:not(.nw-back-btn) { order: 4; flex: 0 0 auto; }
+}
+
+/* 可操作 empty state：圖示 + 標題 + 解釋 + 一個明確 CTA（唔止一句灰字） */
+.nw-empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 36px 24px; text-align: center; color: var(--color-text-muted);
+}
+.nw-empty-state strong { color: var(--color-text); font-size: 15px; }
+.nw-empty-state p { margin: 0; font-size: 13px; line-height: 1.5; max-width: 30ch; }
+
+/* ── P0-6：儲存狀態（Saving／Saved／Offline changes／Save failed）─────────
+   polite live region：讀屏會播報，視覺上細細粒唔搶注意力。 */
+.nw-save-status { font-size: 11.5px; font-weight: 600; color: var(--color-text-muted); }
+.nw-save-status.is-saving { color: var(--color-text-muted); }
+.nw-save-status.is-saved { color: var(--color-success, #16a34a); }
+.nw-save-status.is-offline { color: var(--color-warning, #b45309); }
+.nw-save-status.is-error { color: var(--color-error, #dc2626); }

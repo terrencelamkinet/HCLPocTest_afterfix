@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════════════════
+   DESIGN4 OVERRIDES — 色彩 / 字體主體（附件 A 最終版）
+   ─────────────────────────────────────────────────────────
+   Design 4 換裝層：藍色主色系 + 字體 Space Grotesk / Inter。
+   透過 CSS Cascade 覆寫 index.css / dashboard.css / todo.css 嘅 token。
+
+   主色驗收標準：
+     Light  #1B3B4B   Dark  #4FB0A0
+   （全站唔應該再出現 teal 綠色 #0f6f6f 系）
+
+   載入順序（main.tsx）：
+     index.css → dashboard.css → todo.css
+     → design4-overrides.css（本檔）→ design4-v2-patch.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 藍色主色系 — Light ── */
+:root,
+[data-theme="light"] {
+  --color-primary: #1B3B4B; --color-on-primary: #ffffff;
+  --color-primary-hover: #16303E;
+  --color-primary-active: #112732;
+  --color-primary-highlight: #E3EBF2;
+
+  --color-blue: #1B3B4B;
+  --color-blue-highlight: #E4ECF2;
+
+  /* 冷 Slate 表面（2026-09-04 由暖 Cream 轉冷色系） */
+  --color-bg: #F8FAFC;
+  --color-surface-offset: #F1F5F9;
+  --color-surface-offset-2: #E2E8F0;
+  --color-surface-dynamic: #E2E8F0;
+  --color-divider: #E2E8F0;
+  --color-border: #CBD5E1;
+
+  --color-text: #334155;
+  --color-text-muted: #64748B;
+  --color-text-faint: #94A3B8;
+
+  /* Focus ring — Violet（2026-09-04 統一全站 focus indicator） */
+  --color-focus: #8B5CF6;
+  --color-focus-hover: #7C3AED;
+  --color-focus-soft: rgba(139, 92, 246, .18);
+
+  /* 陰影轉冷調 */
+  --shadow-sm: 0 1px 2px oklch(0.3 0.03 250/.06);
+  --shadow-md: 0 6px 20px oklch(0.3 0.03 250/.10);
+  --shadow-lg: 0 20px 48px oklch(0.3 0.03 250/.16);
+}
+
+/* ── 藍色主色系 — Dark ── */
+[data-theme="dark"] {
+  --color-primary: #4FB0A0; --color-on-primary: #151513;
+  --color-primary-hover: #62C0B0;
+  --color-primary-active: #7ACDBF;
+  --color-primary-highlight: #1C332E;
+
+  --color-blue: #4FB0A0;
+  --color-blue-highlight: #213442;
+
+  /* 冷藍黑表面 */
+  --color-bg: #151513;
+  --color-surface: #1B1B19;
+  --color-surface-2: #212120;
+  --color-surface-offset: #212120;
+  --color-surface-offset-2: #292927;
+  --color-surface-dynamic: #292927;
+  --color-divider: #2A2A28;
+  --color-border: #38372F;
+
+  --color-text: #E9E8E4;
+  --color-text-muted: #9C9A94;
+  --color-text-faint: #5F5D57;
+  --color-text-inverse: #151513;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
+  --shadow-md: 0 10px 30px rgba(0,0,0,.40);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,.55);
+}
+
+/* ── 字體主體 ──
+   Space Grotesk = display，Inter = body。
+   Segoe UI Variable 由 design4-v2-patch.css 加入（Windows fallback）。 */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --font-display: 'Poppins', 'Inter', 'General Sans', sans-serif;
+  --font-body: 'Inter', 'General Sans', sans-serif;
+}
+
+/* ── 字體渲染微調（macOS 上尤其重要） ── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Display 字體用於數字/標題時嘅字距 ── */
+h1, h2, h3,
+.kpi-val, .stat-value, .month-date, .nav-section-label {
+  letter-spacing: -0.01em;
+}
+
+/* ── 表面層次微調 ──
+   ⚠️ 2026-08-10 fix：原本 `var(--color-surface-offset)` 自引用 = cyclic →
+   custom property 變 guaranteed-invalid → 全 app hover/背景全部失效。
+   ⚠️ 2026-08-10 v2：Terrence 要求 hover 用純淺灰 — 移除 2%/3% 主色 tint。 */
+:root,
+[data-theme="light"] {
+  --color-surface-offset: #F1F5F9;
+}
+
+[data-theme="dark"] {
+  --color-surface-offset: #212120;
+}
+
+/* ── Login 頁獨立色系 — 原本喺 index.css 寫死 teal (#1B3B4B)，換做藍色 ── */
+.login-page {
+  --color-primary: #1B3B4B; --color-on-primary: #ffffff;
+  --color-primary-hover: #16303E;
+  --color-primary-active: #112732;
+  --color-primary-highlight: #E3EBF2;
+  --color-blue: #1B3B4B;
+  --color-blue-highlight: #E4ECF2;
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #FFFFFF;
+  --color-surface-offset: #F1F5F9;
+  --color-surface-offset-2: #E2E8F0;
+  --color-divider: #E2E8F0;
+  --color-border: #CBD5E1;
+  --color-text: #334155;
+  --color-text-muted: #64748B;
+  --color-text-faint: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+  --color-error: #C23B4A;
+  --color-error-highlight: #F6DCDF;
+  --color-success: #387A3A;
+  --color-success-highlight: #DCEBDC;
+}
+
+[data-theme="dark"] .login-page {
+  --color-primary: #4FB0A0; --color-on-primary: #151513;
+  --color-primary-hover: #62C0B0;
+  --color-primary-active: #7ACDBF;
+  --color-primary-highlight: #1C332E;
+  --color-blue: #4FB0A0;
+  --color-bg: #151513;
+  --color-surface: #1B1B19;
+  --color-surface-2: #212120;
+  --color-surface-offset: #212120;
+  --color-surface-offset-2: #292927;
+  --color-divider: #2A2A28;
+  --color-border: #38372F;
+  --color-text: #E9E8E4;
+  --color-text-muted: #9C9A94;
+  --color-text-faint: #5F5D57;
+  --color-text-inverse: #151513;
+}
+
+/* ── Dashboard (dash01-shell) 獨立色系 — 原本寫死 teal (#1B3B4B)，換做藍色 ── */
+.dash01-shell {
+  --color-primary: #1B3B4B; --color-on-primary: #ffffff;
+  --color-primary-hover: #16303E;
+  --color-primary-active: #112732;
+  --color-primary-highlight: #E3EBF2;
+  --color-blue: #1B3B4B;
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #FFFFFF;
+  --color-surface-offset: #F1F5F9;
+  --color-surface-offset-2: #E2E8F0;
+  --color-divider: #E2E8F0;
+  --color-border: #CBD5E1;
+  --color-text: #334155;
+  --color-text-muted: #64748B;
+  --color-text-faint: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+}
+
+[data-theme="dark"] .dash01-shell {
+  --color-primary: #4FB0A0; --color-on-primary: #151513;
+  --color-primary-hover: #62C0B0;
+  --color-primary-active: #7ACDBF;
+  --color-primary-highlight: #1C332E;
+  --color-blue: #4FB0A0;
+  --color-bg: #151513;
+  --color-surface: #1B1B19;
+  --color-surface-2: #212120;
+  --color-surface-offset: #212120;
+  --color-surface-offset-2: #292927;
+  --color-divider: #2A2A28;
+  --color-border: #38372F;
+  --color-text: #E9E8E4;
+  --color-text-muted: #9C9A94;
+  --color-text-faint: #5F5D57;
+  --color-text-inverse: #151513;
+}

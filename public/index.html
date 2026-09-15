@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Penguin CRM — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script defer src="./js/main.js"></script>
+</head>
+<body data-page="home">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="./index.html"><span class="brand-mark">N</span><span>Penguin CRM</span></a>
+    <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">☰</button>
+    <nav class="main-nav" aria-label="Primary navigation">
+      <ul>
+        <li><a data-nav="home" href="./index.html">Home</a></li>
+        <li><a data-nav="features" href="./features.html">Features</a></li>
+        <li><a data-nav="ai-engine" href="./ai-engine.html">AI Engine</a></li>
+        <li><a data-nav="integrations" href="./integrations.html">Integrations</a></li>
+        <li><a data-nav="architecture" href="./architecture.html">Architecture</a></li>
+        <li><a data-nav="pricing" href="./pricing.html">Pricing</a></li>
+        <li><a data-nav="demo-data" href="./demo-data.html">Demo Data</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a class="btn-login" href="/sign-in">Log in</a>
+      <button class="theme-toggle" data-theme-toggle>Dark mode</button>
+    </div>
+  </div>
+</header>
+<main id="main" class="page">
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Synthetic demo mode · multi-page source package</span>
+      <h1>Your CRM that thinks ahead, not just stores records.</h1>
+      <p class="lead">This website package uses fully generated demo data for presentation only. It is split into separate HTML, CSS, JS, and JSON files, with complete cross-page routing so every page can connect cleanly on your web server.</p>
+      <div class="hero-actions">
+        <a class="btn" href="./features.html">Explore features</a>
+        <a class="btn-ghost" href="./demo-data.html">View demo data source</a>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-chip"><strong data-count="128"></strong><span>Demo companies</span></div>
+        <div class="stat-chip"><strong data-count="364"></strong><span>Demo contacts</span></div>
+        <div class="stat-chip"><strong data-count="27"></strong><span>Active projects</span></div>
+        <div class="stat-chip"><strong data-count="42"></strong><span>Scheduled events</span></div>
+        <div class="stat-chip"><strong data-count="118"></strong><span>Weekly nudges</span></div>
+      </div>
+    </div>
+    <aside class="card hero-panel">
+      <span class="badge">Homepage summary</span>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Meeting briefs sent</div><div class="value" data-count="76"></div></div>
+        <div class="kpi"><div class="label">Cold accounts flagged</div><div class="value" data-count="18"></div></div>
+        <div class="kpi"><div class="label">Tasks auto-linked</div><div class="value" data-count="93"></div></div>
+        <div class="kpi"><div class="label">AI usage budget</div><div class="value" data-count="84" data-suffix="%"></div></div>
+      </div>
+      <p class="inline-note">Numbers above are generated sample values, not production metrics.</p>
+    </aside>
+  </section>
+
+  <section class="section">
+    <h2>Built for deployment handoff</h2>
+    <p class="section-intro">The structure follows your preference for separate source files and multiple subpages instead of a single long page. Static sites commonly separate markup, styling, and scripts into organised folders, and mobile-first responsive design should be tested at phone widths around 390–414px such as iPhone 14 Pro.[web:24][web:29][cite:35]</p>
+    <div class="grid-3">
+      <article class="feature-card card">
+        <span class="badge">Structure</span>
+        <h3>Separated source files</h3>
+        <p class="muted">HTML pages, shared CSS, shared JS, and a synthetic JSON data source.</p>
+      </article>
+      <article class="feature-card card">
+        <span class="badge">Routing</span>
+        <h3>Complete page loop</h3>
+        <p class="muted">Every page uses the same navigation, so the full route loop works consistently.</p>
+      </article>
+      <article class="feature-card card">
+        <span class="badge">Mobile</span>
+        <h3>iPhone-first responsive</h3>
+        <p class="muted">Touch targets, stacked grids, and safe viewport behavior are prioritised for small screens.[web:29][web:32]</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="callout">
+      <strong>Important:</strong> this package intentionally uses fabricated demo data, because you asked not to use real data. The source JSON is exposed on the Demo Data page and can be replaced later with your own API or database feed.
+    </div>
+    <div class="route-links">
+      <a class="btn" href="./architecture.html">See architecture</a>
+      <a class="btn-ghost" href="./pricing.html">See pricing page</a>
+      <a class="btn-ghost" href="./integrations.html">See integrations page</a>
+    </div>
+  </section>
+</main>
+<footer class="site-footer"><div class="footer-inner"><div>Synthetic Penguin demo website package</div><div>Separate HTML · CSS · JS · JSON</div></div></footer>
+</body>
+</html>

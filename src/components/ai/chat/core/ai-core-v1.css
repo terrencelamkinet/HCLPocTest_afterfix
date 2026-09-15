@@ -1,0 +1,224 @@
+/* ─────────────────────────────────────────────────────────────
+   AI Core v1 — 精簡整合版（跟 ChatboxPanel 現有 design tokens）
+   覆蓋：follow-up chips、secretary banner、agent switcher、
+   quota bar、provider chip、autofill button
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Follow-up chips（Perplexity 式延伸問題） ── */
+.nca-followups {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nca-followups-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted, #8a8f98);
+}
+.nca-followups-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nca-followup-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #e3e6ea);
+  background: var(--color-surface-2, #f5f6f8);
+  color: var(--color-text, #1a1d21);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nca-followup-chip:hover {
+  background: var(--color-surface-offset, #eceef1);
+  border-color: var(--color-primary, #4f6ef7);
+}
+
+/* ── Secretary banner（個性化問候 + 工作時間） ── */
+.nxc-secretary-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  margin: 8px 12px 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(79, 110, 247, 0.08), rgba(79, 110, 247, 0.03));
+  border: 1px solid rgba(79, 110, 247, 0.18);
+  font-size: 12px;
+  color: var(--color-text, #1a1d21);
+}
+.nxc-secretary-greeting {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nxc-secretary-note {
+  color: var(--color-text-muted, #8a8f98);
+  flex: 1;
+  min-width: 0;
+}
+.nxc-banner-close {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #8a8f98);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+/* ── Agent switcher（header dropdown） ── */
+.nxc-agent-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e3e6ea);
+  background: var(--color-surface-2, #f5f6f8);
+  font-size: 11px;
+  color: var(--color-text, #1a1d21);
+  cursor: pointer;
+  max-width: 130px;
+}
+.nxc-agent-switcher select {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+  max-width: 110px;
+}
+
+/* ── Quota bar（底部薄進度條） ── */
+.nxc-quota {
+  padding: 6px 14px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.nxc-quota-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: var(--color-text-muted, #8a8f98);
+}
+.nxc-quota-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+.nxc-quota-value.warn {
+  color: #d97706;
+}
+.nxc-quota-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-border, #e3e6ea);  overflow: hidden;
+}
+.nxc-quota-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-primary, #4f6ef7);
+  transition: width 0.4s ease;
+}
+.nxc-quota-fill.warn {
+  background: #d97706;
+}
+
+/* ── Provider chip（settings 面板） ── */
+.nxc-provider-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.nxc-provider-chip.degraded {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.25);
+}
+.nxc-provider-chip.disconnected {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ── Autofill button（欄位右側） ── */
+.nca-autofill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  border: 1px dashed var(--color-border, #e3e6ea);
+  background: transparent;
+  color: var(--color-text-muted, #8a8f98);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nca-autofill-btn:hover {
+  border-color: var(--color-primary, #4f6ef7);
+  color: var(--color-primary, #4f6ef7);
+  background: rgba(79, 110, 247, 0.05);
+}
+.nca-autofill-btn.running {
+  color: var(--color-primary, #4f6ef7);
+  cursor: wait;
+}
+.nca-autofill-btn.done {
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+.nca-spin {
+  animation: nca-rotate 0.8s linear infinite;
+}
+@keyframes nca-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Subscription badge（2026-09-07 Terrence: pro/free subscription 標示） ── */
+.nxc-sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.nxc-sub-badge.pro {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.35);
+}
+.nxc-sub-badge.free {
+  background: #eef0f3;
+  color: #6b7280;
+  border: 1px solid #e3e6ea;
+}
+.nxc-pro-unlimited {
+  color: #b45309;
+  font-weight: 600;
+}

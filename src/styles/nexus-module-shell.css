@@ -1,0 +1,30 @@
+
+/* ═══════════════════════════════════════════════════════
+   nexus-module-shell.css — Top-level nav shell tying
+   Gallery / Bulk Upload / Tag Management together
+   ═══════════════════════════════════════════════════════ */
+
+.nc-module-shell { display: flex; flex-direction: column; height: 100%; }
+.nc-module-nav {
+  display: flex; gap: var(--space-1); padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--color-border); background: var(--color-bg); flex-shrink: 0;
+}
+.nc-module-tab {
+  min-height: var(--btn-h-lg);
+  display: flex; align-items: center; gap: 6px; padding: var(--space-3) var(--space-4);
+  font-size: 13px; font-weight: 600; color: var(--color-text-secondary);
+  border-bottom: 2px solid transparent; text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.nc-module-tab:hover { color: var(--color-text-primary); }
+.nc-module-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.nc-module-body { flex: 1; overflow: hidden; display: flex; }
+/* 2026-09-12（用戶：#5 name card page 爆 width）：
+   冇 min-width: 0 嘅 flex item 唔可以縮到細過內容嘅 min-content 寬度，
+   所以 .nc-page（內容 min-content 389px）會爆出父層 358px，再被 overflow:hidden 切右邊。 */
+.nc-module-body > * { flex: 1; min-width: 0; }
+
+@media (max-width: 767px) {
+  .nc-module-nav { padding: 0 var(--space-3); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nc-module-tab { padding: var(--space-3) var(--space-3); font-size: 12.5px; white-space: nowrap; }
+}

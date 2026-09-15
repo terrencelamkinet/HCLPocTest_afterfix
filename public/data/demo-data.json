@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "note": "All data in this package is synthetic demo data generated for UI and routing demonstration only.",
+    "version": "demo-1.0"
+  },
+  "summary": {
+    "companies": 128,
+    "contacts": 364,
+    "activeProjects": 27,
+    "scheduledEvents": 42,
+    "weeklyNudges": 118
+  },
+  "companies": [
+    {"company":"Northstar Retail Group","segment":"Retail","owner":"A. Wong","healthScore":82,"lastTouchpointDays":4,"pipelineStage":"Expansion"},
+    {"company":"Harbourlink Logistics","segment":"Logistics","owner":"K. Chan","healthScore":67,"lastTouchpointDays":11,"pipelineStage":"Proposal"},
+    {"company":"Apex Clinical Systems","segment":"Healthcare","owner":"J. Lee","healthScore":54,"lastTouchpointDays":19,"pipelineStage":"POC"},
+    {"company":"Vanta Education Trust","segment":"Education","owner":"M. Ho","healthScore":41,"lastTouchpointDays":29,"pipelineStage":"Reactivation"},
+    {"company":"Summit Asset Counsel","segment":"Finance","owner":"D. Lam","healthScore":76,"lastTouchpointDays":6,"pipelineStage":"Negotiation"},
+    {"company":"Blueport Telecom Labs","segment":"Telecom","owner":"S. Ng","healthScore":63,"lastTouchpointDays":13,"pipelineStage":"Discovery"}
+  ],
+  "projects": [
+    {"project":"Customer Service AI Rollout","account":"Northstar Retail Group","stage":"Implementation","value":"HK$ 480,000","nextStep":"Workshop pack review","daysOpen":36},
+    {"project":"Backup Platform Refresh","account":"Harbourlink Logistics","stage":"Proposal","value":"HK$ 260,000","nextStep":"Commercial revision","daysOpen":54},
+    {"project":"Security Posture Pilot","account":"Apex Clinical Systems","stage":"POC","value":"HK$ 320,000","nextStep":"Pilot checklist signoff","daysOpen":48},
+    {"project":"Analytics Modernisation","account":"Summit Asset Counsel","stage":"Negotiation","value":"HK$ 610,000","nextStep":"Legal redlines","daysOpen":73},
+    {"project":"Hybrid Cloud Advisory","account":"Blueport Telecom Labs","stage":"Discovery","value":"HK$ 190,000","nextStep":"Scope call booking","daysOpen":21}
+  ],
+  "activityFeed": [
+    {"time":"09:15","type":"Meeting Brief","account":"Northstar Retail Group","summary":"Pre-meeting pack delivered for retail expansion review.","status":"sent"},
+    {"time":"10:40","type":"Touchpoint Prompt","account":"Harbourlink Logistics","summary":"Asked owner to confirm post-demo notes.","status":"waiting"},
+    {"time":"13:05","type":"Deal Radar","account":"Apex Clinical Systems","summary":"POC has been idle for 9 days.","status":"flagged"},
+    {"time":"15:20","type":"Clarification","account":"Summit Asset Counsel","summary":"Needs confirmation on project-product mapping.","status":"pending"},
+    {"time":"17:30","type":"Relationship Coach","account":"Vanta Education Trust","summary":"Suggested re-engagement email draft.","status":"queued"}
+  ],
+  "roadmap": [
+    {"name":"Meal Brief","priority":"High"},
+    {"name":"Tomorrow Brief","priority":"Medium"},
+    {"name":"POC Tracker","priority":"Medium"},
+    {"name":"Certification Reminder","priority":"Low"}
+  ]
+}

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS CRM — Design 4 v2 Preview</title>
+<style>
+  /* ═══════════════ Design 4 v2 demo styles (self-contained) ═══════════════ */
+  :root {
+    --ai-violet: #7C5CFC;
+    --ai-cyan: #22D3EE;
+    --surface: #ffffff;
+    --surface-2: #f7f7f5;
+    --surface-offset: #f1f0ee;
+    --divider: #e7e5e2;
+    --text: #1f1e1c;
+    --text-muted: #6f6d68;
+    --text-faint: #a5a29c;
+    --primary: #0f6f6f;
+    --radius-sm: .375rem;
+    --radius-md: .5rem;
+    --radius-lg: .75rem;
+    --font-display: 'Space Grotesk', 'Segoe UI Variable Display', 'Inter', sans-serif;
+    --font-body: 'Inter', 'Segoe UI Variable Text', 'General Sans', sans-serif;
+    --shadow-lg: 0 24px 60px rgba(0,0,0,.14);
+  }
+  [data-theme="dark"] {
+    --surface: #1b1b19;
+    --surface-2: #212120;
+    --surface-offset: #212120;
+    --divider: #2a2a28;
+    --text: #e9e8e4;
+    --text-muted: #9c9a94;
+    --text-faint: #5f5d57;
+    --primary: #54a6a6;
+    --shadow-lg: 0 24px 60px rgba(0,0,0,.5);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: #101014;
+    color: var(--text);
+    padding: 40px 24px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page-title { color: #fff; text-align: center; font-family: var(--font-display); margin-bottom: 6px; font-size: 22px; }
+  .page-sub { color: #9a9aa3; text-align: center; font-size: 13px; margin-bottom: 32px; }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 1280px; margin: 0 auto; }
+  .frame { background: var(--surface-2); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid #2c2c33; }
+  .frame-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #1d1d24; border-bottom: 1px solid #2c2c33; }
+  .frame-head .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .frame-head .r { background: #ff5f57; } .frame-head .y { background: #febc2e; } .frame-head .g { background: #28c840; }
+  .frame-head span { margin-left: auto; color: #8a8a94; font-size: 11px; font-family: var(--font-body); }
+  .frame-body { padding: 20px; }
+
+  /* ── App shell mock ── */
+  .app { display: grid; grid-template-columns: 200px 1fr; grid-template-rows: 48px 1fr; border-radius: 12px; overflow: hidden; border: 1px solid var(--divider); background: var(--surface); }
+  .sidebar { grid-row: 1 / 3; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: saturate(1.6) blur(20px); -webkit-backdrop-filter: saturate(1.6) blur(20px); border-right: 1px solid var(--divider); padding: 12px 10px; }
+  .brand { font-family: var(--font-display); font-weight: 700; font-size: 15px; padding: 4px 10px 14px; border-bottom: 1px solid var(--divider); margin-bottom: 10px; }
+  .brand b { color: var(--primary); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 4px; color: var(--text-muted); font-size: 13px; font-weight: 500; margin-bottom: 2px; position: relative; overflow: hidden; min-height: 40px; }
+  .nav-item.active { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+  .nav-item .ic { width: 16px; height: 16px; border-radius: 4px; background: currentColor; opacity: .7; flex-shrink: 0; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 0 14px; background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: saturate(1.6) blur(20px); -webkit-backdrop-filter: saturate(1.6) blur(20px); border-bottom: 1px solid var(--divider); }
+  .search { flex: 1; max-width: 260px; height: 30px; border-radius: 4px; background: var(--surface-offset); border: 1px solid var(--divider); display: flex; align-items: center; padding: 0 10px; color: var(--text-faint); font-size: 12px; }
+  .icon-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--text-muted); background: none; border: none; cursor: pointer; position: relative; overflow: hidden; flex-shrink: 0; }
+  .icon-btn .ic { width: 15px; height: 15px; border-radius: 50%; background: currentColor; opacity: .75; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--ai-violet), var(--ai-cyan)); flex-shrink: 0; }
+
+  /* ── KPI grid ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { border-radius: 8px; border: 1px solid var(--divider); background: var(--surface); padding: 14px; }
+  .kpi .label { font-size: 11px; color: var(--text-faint); margin-bottom: 6px; }
+  .kpi .val { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+
+  /* ── AI glow card (核心 demo) ── */
+  @property --ai-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .ai-card { position: relative; border-radius: 8px; background: var(--surface); padding: 18px; margin-bottom: 14px; }
+  .ai-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px;
+    background: conic-gradient(from var(--ai-angle), #7C5CFC, #22D3EE, #7C5CFC);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude;
+    opacity: .45; pointer-events: none; animation: spin 6s linear infinite; transition: opacity .3s ease; z-index: 1;
+  }
+  .ai-card:hover::before, .ai-card.thinking::before { opacity: 1; }
+  .ai-card.thinking { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes spin { to { --ai-angle: 360deg; } }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(124,92,252,.22); } 50% { box-shadow: 0 0 26px 4px rgba(34,211,238,.32); } }
+  @media (prefers-reduced-motion: reduce) { .ai-card::before { animation: none; } .ai-card.thinking { animation: none; } }
+
+  .ai-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ai-badge { font-size: 10px; font-weight: 700; letter-spacing: .08em; padding: 3px 8px; border-radius: 4px; color: #fff; background: linear-gradient(90deg, #7C5CFC, #22D3EE); }
+  .ai-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* ── Buttons: 4px radius + reveal ── */
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn { position: relative; overflow: hidden; min-height: 40px; padding: 0 16px; border-radius: 4px; border: 1px solid var(--divider); background: var(--surface); color: var(--text); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--primary); color: #fff; border-color: transparent; }
+  @media (pointer: fine) and (hover: hover) {
+    .btn::after, .icon-btn::after, .nav-item::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      background: radial-gradient(140% 140% at 50% 0%, rgba(255,255,255,.30), transparent 55%);
+      opacity: 0; transition: opacity .15s ease; pointer-events: none;
+    }
+    .btn:hover::after, .icon-btn:hover::after, .nav-item:hover::after { opacity: 1; }
+  }
+  .btn:focus-visible, .icon-btn:focus-visible, .nav-item:focus-visible { outline: 2px solid #7C5CFC; outline-offset: 2px; }
+
+  /* ── Mobile frame ── */
+  .frame.mobile { max-width: 340px; margin: 0 auto; }
+  .phone { border-radius: 24px; border: 1px solid #2c2c33; overflow: hidden; background: var(--surface-2); }
+  .phone-notch { height: 34px; background: #1d1d24; display: flex; align-items: center; justify-content: center; }
+  .phone-notch i { width: 110px; height: 22px; background: #000; border-radius: 12px; display: block; }
+  .phone-body { padding: 14px; }
+  .m-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .m-kpi { border-radius: 8px; border: 1px solid var(--divider); background: var(--surface); padding: 12px; }
+  .m-kpi .val { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+  .m-kpi .label { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+  .mobile-actions { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); border-top: 1px solid var(--divider); }
+  .mobile-actions .btn { flex: 1; min-height: 44px; }
+  .touch-note { font-size: 10.5px; color: var(--text-faint); text-align: center; padding: 6px 0 2px; }
+
+  @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <h1 class="page-title">NEXUS CRM — Design 4 v2</h1>
+  <p class="page-sub">AI-Native Glow · macOS / Windows Compliance · Mobile RWD — hover AI card 或睇 thinking 狀態</p>
+
+  <div class="stage">
+    <!-- ── Desktop Light ── -->
+    <div class="frame" data-theme="light">
+      <div class="frame-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span>Desktop · Light</span></div>
+      <div class="frame-body">
+        <div class="app">
+          <div class="sidebar">
+            <div class="brand">NEXUS<b>CRM</b></div>
+            <div class="nav-item active"><span class="ic"></span>Dashboard</div>
+            <div class="nav-item"><span class="ic"></span>Calendar</div>
+            <div class="nav-item"><span class="ic"></span>Contacts</div>
+            <div class="nav-item"><span class="ic"></span>Deals</div>
+            <div class="nav-item"><span class="ic"></span>Tasks</div>
+          </div>
+          <div class="topbar">
+            <div class="search">🔍 Search…</div>
+            <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+              <button class="icon-btn"><span class="ic"></span></button>
+              <button class="icon-btn"><span class="ic"></span></button>
+              <div class="avatar"></div>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <div class="kpi-grid">
+              <div class="kpi"><div class="label">Contacts</div><div class="val">1,284</div></div>
+              <div class="kpi"><div class="label">Companies</div><div class="val">342</div></div>
+              <div class="kpi"><div class="label">Deal Count</div><div class="val">57</div></div>
+              <div class="kpi"><div class="label">Tasks</div><div class="val">23</div></div>
+            </div>
+            <div class="ai-card thinking">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>紫→青 conic-gradient 光圈持續轉動（6s 一圈）。Hover 或 .is-thinking 時光暈增強。已加 prefers-reduced-motion 支援。</p>
+            </div>
+            <div class="ai-card">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>靜止狀態透明度較低（.45），hover 先加強 — 清晰傳達「呢個係 AI，而且依家在運算」。</p>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary">+ New Deal</button>
+              <button class="btn">Export</button>
+              <button class="btn">⋯</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Desktop Dark ── -->
+    <div class="frame" data-theme="dark">
+      <div class="frame-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span>Desktop · Dark</span></div>
+      <div class="frame-body">
+        <div class="app">
+          <div class="sidebar">
+            <div class="brand">NEXUS<b>CRM</b></div>
+            <div class="nav-item active"><span class="ic"></span>Dashboard</div>
+            <div class="nav-item"><span class="ic"></span>Calendar</div>
+            <div class="nav-item"><span class="ic"></span>Contacts</div>
+            <div class="nav-item"><span class="ic"></span>Deals</div>
+            <div class="nav-item"><span class="ic"></span>Tasks</div>
+          </div>
+          <div class="topbar">
+            <div class="search">🔍 Search…</div>
+            <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+              <button class="icon-btn"><span class="ic"></span></button>
+              <button class="icon-btn"><span class="ic"></span></button>
+              <div class="avatar"></div>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <div class="kpi-grid">
+              <div class="kpi"><div class="label">Contacts</div><div class="val">1,284</div></div>
+              <div class="kpi"><div class="label">Companies</div><div class="val">342</div></div>
+              <div class="kpi"><div class="label">Deal Count</div><div class="val">57</div></div>
+              <div class="kpi"><div class="label">Tasks</div><div class="val">23</div></div>
+            </div>
+            <div class="ai-card">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>Dark mode 下 Vibrancy 透明度調低（sidebar 82% → 74%），光圈對比依然清晰。</p>
+            </div>
+            <div class="ai-card thinking">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>.is-thinking 狀態：光圈全亮 + 呼吸 pulse 動畫。</p>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary">+ New Deal</button>
+              <button class="btn">Export</button>
+              <button class="btn">⋯</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Mobile Light ── -->
+    <div class="frame mobile" data-theme="light">
+      <div class="frame-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span>Mobile · Light</span></div>
+      <div class="frame-body" style="padding:14px">
+        <div class="phone">
+          <div class="phone-notch"><i></i></div>
+          <div class="phone-body">
+            <div class="m-kpis">
+              <div class="m-kpi"><div class="val">1,284</div><div class="label">Contacts</div></div>
+              <div class="m-kpi"><div class="val">342</div><div class="label">Companies</div></div>
+              <div class="m-kpi"><div class="val">57</div><div class="label">Deals</div></div>
+              <div class="m-kpi"><div class="val">23</div><div class="label">Tasks</div></div>
+            </div>
+            <div class="ai-card thinking">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>KPI 2 欄降級，Safe Area 已留位（notch + 手勢列）。</p>
+            </div>
+            <p class="touch-note">觸控目標 44px（pointer:coarse 自動升級）</p>
+            <div class="mobile-actions">
+              <button class="btn primary">+ New</button>
+              <button class="btn">Filter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Mobile Dark ── -->
+    <div class="frame mobile" data-theme="dark">
+      <div class="frame-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span>Mobile · Dark</span></div>
+      <div class="frame-body" style="padding:14px">
+        <div class="phone">
+          <div class="phone-notch"><i></i></div>
+          <div class="phone-body">
+            <div class="m-kpis">
+              <div class="m-kpi"><div class="val">1,284</div><div class="label">Contacts</div></div>
+              <div class="m-kpi"><div class="val">342</div><div class="label">Companies</div></div>
+              <div class="m-kpi"><div class="val">57</div><div class="label">Deals</div></div>
+              <div class="m-kpi"><div class="val">23</div><div class="label">Tasks</div></div>
+            </div>
+            <div class="ai-card">
+              <div class="ai-head"><span class="ai-badge">AI</span></div>
+              <p>底部操作區 sticky：backdrop-filter 磨砂 + safe-area-inset-bottom 避開手勢列。</p>
+            </div>
+            <p class="touch-note">輸入框 <768px 強制 16px 防 iOS 自動縮放</p>
+            <div class="mobile-actions">
+              <button class="btn primary">+ New</button>
+              <button class="btn">Filter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

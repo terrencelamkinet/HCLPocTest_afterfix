@@ -1,0 +1,30 @@
+:root {
+  /* PenguinCRM Brand Color System */
+  --pcrm-navy: #1B3B4B;        /* Primary - headers, main strokes, primary buttons */
+  --pcrm-slate-blue: #4A7A96;  /* Secondary - links, secondary buttons, icons */
+  --pcrm-powder-blue: #8FB4C6; /* Tertiary - borders, dividers, disabled states */
+  --pcrm-teal: #2E9E8E;        /* Accent - CTAs, success states, highlights */
+  --pcrm-coral: #E8825A;       /* Accent - alerts, notifications, warm highlights */
+  --pcrm-cream: #F7F3EC;       /* Background - page background, cards */
+  --pcrm-white: #FFFFFF;
+  --pcrm-text-primary: #1B3B4B;
+  --pcrm-text-secondary: #4A7A96;
+
+  /* Semantic mappings for CRM UI */
+  --pcrm-btn-primary-bg: var(--pcrm-navy);
+  --pcrm-btn-secondary-bg: var(--pcrm-teal);
+  --pcrm-alert-bg: var(--pcrm-coral);
+  --pcrm-link-color: var(--pcrm-slate-blue);
+  --pcrm-border-color: var(--pcrm-powder-blue);
+  --pcrm-bg-page: var(--pcrm-cream);
+
+  /* Typography */
+  --pcrm-font-heading: 'Poppins', 'Noto Sans TC', sans-serif;
+  --pcrm-font-body: 'Inter', 'Noto Sans TC', sans-serif;
+
+  /* Radius / spacing tokens (rounded, friendly penguin brand feel) */
+  --pcrm-radius-sm: 6px;
+  --pcrm-radius-md: 12px;
+  --pcrm-radius-lg: 24px;
+  --pcrm-radius-full: 9999px;
+}

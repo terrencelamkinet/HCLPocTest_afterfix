@@ -1,0 +1,159 @@
+{
+  "panel": {
+    "width": 420,
+    "animation": {
+      "duration_ms": 220,
+      "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    "toggle_button": {
+      "position": "bottom-right",
+      "bottom_px": 24,
+      "right_px": 24,
+      "size_px": 48,
+      "border_radius": "50%",
+      "background": "var(--color-primary)",
+      "icon": "Sparkles (24px)",
+      "shadow": "0 4px 16px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.12)"
+    },
+    "header": {
+      "height_px": 56,
+      "avatar": {
+        "style": "gradient square",
+        "size_px": 28,
+        "border_radius_px": 8,
+        "background": "linear-gradient(135deg, var(--color-primary), #5c9df0)",
+        "icon": "Sparkles (14px)"
+      },
+      "title": "NEXUS AI",
+      "subtitle": "CRM Assistant · online",
+      "actions": [
+        { "icon": "clock_svg", "label": "History", "action": "toggle session dropdown" },
+        { "icon": "X (16px)", "label": "Close", "action": "close panel" }
+      ]
+    },
+    "empty_state": {
+      "logo": {
+        "size_px": 56,
+        "border_radius_px": 14,
+        "background": "linear-gradient(135deg, var(--color-primary), #5c9df0)",
+        "icon": "✏️ (24px)",
+        "shadow": "0 4px 12px rgba(0,0,0,0.1)"
+      },
+      "title": "今日想做啲咩？",
+      "subtitle": "問問題、搵 CRM 資料、或者整理今日重點。",
+      "prompts": [
+        "📊 總結今日 CRM 重點",
+        "🔍 搵最近跟進嘅客戶",
+        "📋 今日待辦事項",
+        "🎯 最需要關注嘅 Deal"
+      ]
+    },
+    "messages": {
+      "padding": "20px (sides + top/bottom when messages exist)",
+      "gap_between_messages_px": 20,
+      "user_bubble": {
+        "max_width_percent": 82,
+        "padding": "8px 12px",
+        "background": "var(--color-surface-offset)",
+        "border_radius": "14px 14px 4px 14px",
+        "font_size_px": 13.5,
+        "line_height": 1.55,
+        "alignment": "flex-end (marginLeft: auto)"
+      },
+      "ai_message": {
+        "layout": "flex row (avatar + body)",
+        "avatar_size_px": 24,
+        "avatar_border_radius": "50%",
+        "avatar_background": "linear-gradient(135deg, var(--color-primary), #5c9df0)",
+        "avatar_icon": "Sparkles (11px)",
+        "body_font_size_px": 13.5,
+        "body_line_height": 1.6,
+        "body_white_space": "pre-wrap",
+        "style": "no bubble, pure text"
+      },
+      "time_divider": {
+        "show": true,
+        "format": "Today · HH:MM",
+        "color": "var(--color-text-faint)",
+        "separator_line": "1px solid var(--color-border)"
+      },
+      "typing_indicator": {
+        "dots": 3,
+        "dot_size_px": 6,
+        "animation": "blink (1.4s infinite)",
+        "color": "var(--color-text-muted)"
+      },
+      "loading_text": "Loading..."
+    },
+    "composer": {
+      "padding": "10px 14px 12px",
+      "input_area": {
+        "border_radius_px": 10,
+        "padding": "6px 8px",
+        "border": "1px solid var(--color-border)",
+        "background": "var(--color-surface)",
+        "focus_ring": false,
+        "focus_ring_config": "border-color: var(--color-primary), box-shadow: 0 0 0 3px rgba(35,131,226,0.15)"
+      },
+      "attach_button": {
+        "icon": "＋",
+        "size_px": 26,
+        "action": "placeholder (no implementation)"
+      },
+      "textarea": {
+        "font_size_px": 13.5,
+        "line_height": 1.5,
+        "max_height_px": 160,
+        "placeholder": "Ask NEXUS AI anything…",
+        "auto_grow": true
+      },
+      "send_button": {
+        "size_px": 28,
+        "enabled_background": "var(--color-primary)",
+        "disabled_background": "var(--color-surface-offset-2)",
+        "icon": "arrow-up SVG",
+        "stroke_width": 2.5
+      },
+      "hint_bar": {
+        "text": "⏎ send · ⇧+⏎ new line",
+        "font_size_px": 10.5,
+        "color": "var(--color-text-faint)"
+      }
+    },
+    "session_list": {
+      "max_items": 20,
+      "max_height_px": 280,
+      "active_item_background": "var(--color-surface-offset)",
+      "dropdown_border": "1px solid var(--color-border)",
+      "shadow": "var(--shadow-lg)"
+    },
+    "error_banner": {
+      "background": "var(--color-notification-highlight)",
+      "text_color": "var(--color-notification)",
+      "icon": "warning-triangle SVG (12px)"
+    }
+  },
+  "api": {
+    "list_sessions": "GET /api/v1/ai/sessions",
+    "get_messages": "GET /api/v1/ai/sessions/{id}/messages",
+    "send_chat": "POST /api/v1/ai/chat?session_id={id}&provider=deepseek&model=deepseek-chat",
+    "response_field": "body.text"
+  },
+  "cron": {
+    "daily_summary": {
+      "schedule": "0 3 * * * (03:00 HKT)",
+      "script": "scripts/daily_summary.py",
+      "db_direct": true,
+      "schema_target": {
+        "session": "nexus_ai.sessions",
+        "message": "nexus_ai.messages"
+      },
+      "format": {
+        "title": "Daily Summary · YYYY-MM-DD",
+        "summary_heading": "📋 今日摘要 · YYYY-MM-DD",
+        "sections": ["📌 Daily Tasks", "📅 Daily Meetings"],
+        "ai_footer": "💡 AI generated summary — 03:00 daily auto-report"
+      }
+    }
+  }
+}

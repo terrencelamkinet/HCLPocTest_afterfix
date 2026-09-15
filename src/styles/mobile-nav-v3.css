@@ -1,0 +1,967 @@
+/* ============================================================
+   NEXUS CRM — Mobile Bottom Nav v3 (AI 管家秘書 theme)
+   Source: nexus-mobile-nav.html (Claude design), adapted to G08:
+     - Uses G08 design tokens (var(--color-*)) — same warm-neutral
+       + teal palette, no migration needed
+     - mnav-/aisp-/cam- prefixes to avoid collisions
+     - Renders ONLY ≤768px; desktop/sidebar untouched
+   ============================================================ */
+
+:root {
+  --mnav-height: 64px;
+  --mnav-center-size: 56px;
+}
+
+@media (min-width: 769px) {
+  .mnav-bar, .mnav-sheet-overlay, .aisp-overlay, .cam-overlay { display: none !important; }
+}
+
+/* ═══════════ Bottom bar ═══════════ */
+.mnav-bar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: calc(var(--mnav-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  /* v7.22: solid fallback first — color-mix()/backdrop-filter 唔 support 嘅
+     browser（舊 WebView）會令 background invalid → nav 全透明 → 低層內容
+     直接透出嚟。fallback 行確保任何環境都有實色底。 */
+  background: var(--color-surface-2);
+  background: color-mix(in oklch, var(--color-surface-2) 96%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-top: 1px solid var(--color-divider);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 10px 8px 0;
+  z-index: 800;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+}
+.mnav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
+  padding: 6px 2px; border-radius: var(--radius-md);
+  color: var(--color-text-faint);
+  font-family: inherit;
+  min-height: 44px; position: relative;
+  transition: color var(--transition-interactive), transform 120ms;
+}
+.mnav-item svg { width: 22px; height: 22px; }
+.mnav-item span { font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
+.mnav-item.active { color: var(--color-primary); }
+.mnav-item:active { transform: scale(0.92); }
+/* Unread badge on the Settings tab (absorbs top-bar bell) */
+.mnav-badge {
+  position: absolute; top: 2px; right: 14px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px; background: var(--color-notification, #c23b4a);
+  color: #fff; font-size: 9.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* Center raised AI/Search button */
+.mnav-center-wrap {
+  flex: 1; display: flex; flex-direction: column; align-items: center; position: relative;
+}
+.mnav-center-btn {
+  width: var(--mnav-center-size); height: var(--mnav-center-size);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-primary), #0a4c52);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 24px -6px color-mix(in oklch, var(--color-primary) 60%, transparent),
+              0 0 0 5px var(--color-bg);
+  border: none; cursor: pointer;
+  padding: 0;  /* logo 自己放大裁切，唔使 padding */
+  overflow: hidden;  /* v7.23: 圓形 clip — 放大嘅 logo 邊緣（乳白背景）被裁走 */
+  transition: transform 160ms cubic-bezier(.16,1,.3,1);
+}
+/* SPEC ai-butler-v2 T2: wrapper 食返 button 原本嘅 -30px margin（badge 唔會被
+   overflow:hidden clip；button 保持 raise 效果） */
+.mnav-center-btn-wrap {
+  position: relative;
+  margin-top: -30px;
+}
+.mnav-center-btn-wrap .mnav-center-btn { margin-top: 0; }
+/* 通知 badge — 管家 logo 右上角紅點 + 數字（9+ cap） */
+.mnav-center-badge {
+  position: absolute;
+  top: -6px; right: -6px;
+  min-width: 19px; height: 19px; padding: 0 5px;
+  border-radius: 999px;
+  background: #d43a4f;
+  color: #fff; font-size: 10.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  z-index: 4;
+  animation: mnav-badge-in 180ms cubic-bezier(.16,1,.3,1);
+}
+@keyframes mnav-badge-in {
+  0% { transform: scale(.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.mnav-center-btn svg { width: 24px; height: 24px; color: #fff; }
+/* v7.23→ SPEC ai-butler-v2: 企鵝管家改用新 zip 系列圖（400x400 全幅設計 — 企鵝主體大，
+   冇舊 logo_square 嘅乳白 padding）→ 唔使 150% zoom + margin trick，100% cover 填滿
+   圓形 button 即可（overflow:hidden 圓形裁切） */
+.mnav-center-logo {
+  width: 100%; height: 100%;
+  max-width: none;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+}
+.mnav-center-btn:active { transform: scale(0.9); }
+/* SPEC ai-butler-v2 動態版: 新通知到達 → item 1（揸鈴 pose）pop-in + 搖鈴一吓
+   （單次擺動 ~600ms — 用戶 2026-09-06: 搖一下夠醒目）；之後停喺靜態 pose（未讀期間） */
+.mnav-center-btn.ringing { animation: mnav-ring-pulse 1.2s ease-in-out; }
+/* 通知 pose 100%（用戶 2026-09-06 試完 88% 後決定轉返 100%） */
+.mnav-center-logo.notif {
+  animation: mnav-notif-pop 320ms cubic-bezier(.16,1,.3,1);
+}
+.mnav-center-btn.ringing .mnav-center-logo.notif {
+  animation: mnav-notif-pop 320ms cubic-bezier(.16,1,.3,1), mnav-bell-ring 600ms ease-in-out 1;
+}
+@keyframes mnav-notif-pop {
+  0% { transform: scale(.6) rotate(-8deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(3deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+/* 搖鈴一吓 — 擺左 → 回彈右 → 歸位（單次） */
+@keyframes mnav-bell-ring {
+  0% { transform: rotate(0); }
+  35% { transform: rotate(-14deg); }
+  65% { transform: rotate(9deg); }
+  100% { transform: rotate(0); }
+}
+@keyframes mnav-ring-pulse {
+  0%, 100% { box-shadow: 0 10px 24px -6px color-mix(in oklch, var(--color-primary) 60%, transparent), 0 0 0 5px var(--color-bg); }
+  30% { box-shadow: 0 10px 24px -6px color-mix(in oklch, #d43a4f 70%, transparent), 0 0 0 5px var(--color-bg), 0 0 0 9px color-mix(in oklch, #d43a4f 22%, transparent); }
+}
+.mnav-center-wrap > span { font-size: 10.5px; font-weight: 700; color: var(--color-primary); margin-top: 2px; }
+.mnav-center-btn.listening { animation: mnav-pulse 1.6s ease-out infinite; }
+@keyframes mnav-pulse {
+  0% { box-shadow: 0 10px 24px -6px color-mix(in oklch, var(--color-primary) 60%, transparent), 0 0 0 5px var(--color-bg), 0 0 0 0 color-mix(in oklch, var(--color-primary) 50%, transparent); }
+  70% { box-shadow: 0 10px 24px -6px color-mix(in oklch, var(--color-primary) 60%, transparent), 0 0 0 5px var(--color-bg), 0 0 0 14px color-mix(in oklch, var(--color-primary) 0%, transparent); }
+  100% { box-shadow: 0 10px 24px -6px color-mix(in oklch, var(--color-primary) 60%, transparent), 0 0 0 5px var(--color-bg), 0 0 0 0 color-mix(in oklch, var(--color-primary) 0%, transparent); }
+}
+
+/* ═══════════ Bottom sheets (shared) ═══════════ */
+.mnav-sheet-overlay, .aisp-overlay, .cam-overlay {
+  position: fixed; inset: 0;
+  background: oklch(0.15 0.01 80/0.45);
+  z-index: 900;
+  display: flex; align-items: flex-end;
+  animation: mnav-overlay-in 200ms ease;
+  /* v6.82: contain scroll so wheel/touch at sheet edges never chains to background */
+  overscroll-behavior: contain;
+}
+/* 2026-09-12（用戶：#1 滾動後 nav 撳唔到）：
+   AI panel 嘅 overlay（z-index 950）本身覆蓋成個畫面（inset: 0），
+   蓋住 z-index 800 嘅底部 nav → 撳 nav 變成撳到 overlay／面板內容。
+   令 overlay 同 panel 只覆蓋到 nav 之上，nav 保持可撳；
+   同時 MobileBottomNav 一撳就會關 panel（見 onNavInteract）。 */
+.aisp-overlay { z-index: 950; background: rgba(15,18,24,0.5); backdrop-filter: blur(2px);
+  bottom: calc(var(--mnav-height) + env(safe-area-inset-bottom)); }
+.cam-overlay { z-index: 960; }
+.mnav-sheet-overlay.closing, .aisp-overlay.closing, .cam-overlay.closing { animation: mnav-overlay-out 180ms ease forwards; }
+@keyframes mnav-overlay-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes mnav-overlay-out { from { opacity: 1 } to { opacity: 0 } }
+
+.mnav-sheet, .aisp-panel, .cam-panel {
+  width: 100%;
+  max-height: 82%;
+  background: var(--color-surface-2);
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  animation: mnav-sheet-in 320ms cubic-bezier(.16,1,.3,1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mnav-sheet.tall, .cam-panel { max-height: 90%; }
+/* 2026-09-10 Terrence: 中間 AI panel 60dvh（用戶：唔需要咁高，60dvh 夠） */
+.aisp-panel { max-height: 60dvh; }
+.mnav-sheet.closing, .aisp-panel.closing, .cam-panel.closing { animation: mnav-sheet-out 200ms ease forwards; }
+@keyframes mnav-sheet-in { from { transform: translateY(100%) } to { transform: translateY(0) } }
+@keyframes mnav-sheet-out { from { transform: translateY(0) } to { transform: translateY(100%) } }
+
+.mnav-sheet-handle, .aisp-handle, .cam-handle {
+  width: 36px; height: 4px; border-radius: 999px;
+  background: var(--color-border); margin: 10px auto 4px; flex-shrink: 0;
+}
+.mnav-sheet-head, .aisp-head, .cam-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px 14px; flex-shrink: 0;
+}
+.mnav-sheet-head h3, .aisp-head h3, .cam-head h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--color-text); }
+/* v6.86: AI panel 頂部壓縮 — 騰空間俾訊息區（放喺 group selectors 之後先覆蓋到；
+   只影響 aisp，唔郁 mnav/cam sheets） */
+.aisp-handle { margin: 6px auto 2px; }
+.aisp-head { padding: 6px 16px 8px; gap: 8px; }
+.aisp-head h3 { font-size: 15px; }
+.mnav-sheet-close, .aisp-close, .cam-close {
+  width: 30px; height: 30px; border-radius: 999px;
+  background: var(--color-surface-offset);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted); border: none; cursor: pointer; flex-shrink: 0;
+}
+.mnav-sheet-close svg, .aisp-close svg, .cam-close svg { width: 15px; height: 15px; }
+.mnav-sheet-body, .aisp-body, .cam-body { padding: 0 20px calc(24px + env(safe-area-inset-bottom)); overflow-y: auto; flex: 1; }
+
+/* Sheet search bar */
+.mnav-sheet-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 8px;
+}
+.mnav-sheet-search input { background: none; border: none; outline: none; flex: 1; font-size: 14px; color: var(--color-text); font-family: inherit; }
+.mnav-sheet-search svg { width: 16px; height: 16px; color: var(--color-text-faint); flex-shrink: 0; }
+.mnav-section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--color-text-faint); margin: 14px 0 6px 10px;
+}
+
+/* List rows (workspace / record) */
+.mnav-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 10px; border-radius: var(--radius-lg);
+  background: none; border: none; cursor: pointer; width: 100%;
+  font-family: inherit; text-align: left;
+  transition: background var(--transition-interactive);
+}
+.mnav-row:active { background: var(--color-surface-offset); }
+.mnav-row-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
+}
+.mnav-row-icon svg { width: 20px; height: 20px; }
+.mnav-row .txt { flex: 1; min-width: 0; }
+.mnav-row .txt strong { display: block; font-size: 14px; font-weight: 700; color: var(--color-text); }
+.mnav-row .txt span { font-size: 12px; color: var(--color-text-muted); }
+.mnav-row-check { width: 20px; height: 20px; color: var(--color-primary); flex-shrink: 0; }
+.mnav-row-chev { color: var(--color-text-faint); flex-shrink: 0; }
+.mnav-row.active { background: var(--color-primary-highlight); }
+.mnav-row-icon-neutral { background: var(--color-surface-offset); color: var(--color-primary); }
+
+/* Quick-add grid */
+.mnav-add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
+.mnav-add-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 6px; border-radius: var(--radius-lg);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  cursor: pointer; font-family: inherit;
+  transition: transform 120ms, border-color var(--transition-interactive);
+}
+.mnav-add-tile:active { transform: scale(0.95); }
+.mnav-add-tile-icon {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  /* Terrence 2026-09-08: 統一 iOS 風格 — 淺藍 tint 底 + 藍 icon（唔要六隻彩色 box） */
+  background: color-mix(in srgb, var(--color-blue) 12%, var(--color-surface));
+  color: var(--color-blue);
+}
+.mnav-add-tile-icon svg { width: 20px; height: 20px; }
+.mnav-add-tile span { font-size: 11.5px; font-weight: 600; text-align: center; color: var(--color-text); }
+
+/* Scan banner */
+.mnav-scan-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--color-primary) 12%, var(--color-surface)), var(--color-surface));
+  border: 1px solid color-mix(in oklch, var(--color-primary) 25%, var(--color-border));
+  border-radius: var(--radius-lg); padding: 14px; margin-bottom: 16px; cursor: pointer;
+  width: 100%; font-family: inherit; text-align: left;
+}
+.mnav-scan-banner-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.mnav-scan-banner-icon svg { width: 22px; height: 22px; color: #fff; }
+.mnav-scan-banner .txt { flex: 1; min-width: 0; }
+.mnav-scan-banner .txt strong { display: block; font-size: 13.5px; font-weight: 700; color: var(--color-text); }
+.mnav-scan-banner .txt span { font-size: 11.5px; color: var(--color-text-muted); }
+.mnav-scan-banner .chev { margin-left: auto; flex-shrink: 0; color: var(--color-text-faint); }
+
+/* Org rows */
+.mnav-org-profile { display: flex; align-items: center; gap: 14px; padding: 8px 4px 18px; }
+.mnav-org-avatar {
+  width: 54px; height: 54px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-blue));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 18px; flex-shrink: 0;
+}
+.mnav-org-profile strong { display: block; font-size: 16px; font-weight: 700; color: var(--color-text); }
+.mnav-org-profile span { font-size: 12.5px; color: var(--color-text-muted); }
+.mnav-org-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 4px; border-bottom: 1px solid var(--color-divider);
+  background: none; border-top: none; border-left: none; border-right: none;
+  width: 100%; font-family: inherit; text-align: left; cursor: pointer;
+}
+.mnav-org-row:last-child { border-bottom: none; }
+.mnav-org-row svg:first-child { width: 18px; height: 18px; color: var(--color-text-muted); flex-shrink: 0; }
+/* v6.71 fix: exclude .mnav-switch — 之前 `> span` 連 switch 都食埋 flex:1 → Dark mode button 走位 */
+.mnav-org-row > span:not(.mnav-switch) { flex: 1; font-size: 14px; font-weight: 500; color: var(--color-text); }
+.mnav-org-row .chev { width: 16px; height: 16px; color: var(--color-text-faint); flex-shrink: 0; }
+
+/* Toggle switch */
+.mnav-switch {
+  width: 36px; height: 20px; border-radius: 999px;
+  background: var(--color-border); position: relative; flex-shrink: 0;
+  border: none; cursor: pointer; transition: background 180ms;
+}
+.mnav-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  transition: transform 180ms;
+}
+.mnav-switch.on { background: var(--color-primary); }
+.mnav-switch.on::after { transform: translateX(16px); }
+
+/* Notifications in Settings sheet (absorbs top-bar bell panel) */
+.mnav-notif-count {
+  font-size: 11px; font-weight: 700; color: var(--color-notification, #c23b4a);
+  flex-shrink: 0;
+}
+.mnav-notif-list {
+  background: var(--color-surface); border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg); padding: 6px 14px; margin: 0 4px 4px;
+}
+.mnav-notif-item { padding: 9px 0; border-bottom: 1px solid var(--color-divider); }
+.mnav-notif-item:last-child { border-bottom: none; }
+.mnav-notif-item-title { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.mnav-notif-item-body {
+  font-size: 11.5px; color: var(--color-text-muted); margin-top: 2px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mnav-notif-item.unread .mnav-notif-item-title::before {
+  content: '● '; color: var(--color-notification, #c23b4a); font-size: 10px; vertical-align: 1px;
+}
+
+/* ═══════════ AI & Search panel ═══════════ */
+/* v6.75: 半屏（50dvh）— 問AI / 搜尋兩個 tab 同高，所有搜尋範圍喺 panel 入面 */
+/* v6.76: 70dvh — 用戶要求更高比例 */
+.aisp-panel { height: 60dvh; min-height: 60dvh; overflow: hidden; font-size: 14px; }
+/* 2026-09-10 Terrence: 中間 AI panel 文字 14px（mobile 保持 14px — 唔跟 desktop 嘅 12px）；icon/emoji 除外 */
+.aisp-panel :where(span, p, div, button, a, li, label, small, strong, em, h1, h2, h3, h4, h5, code, pre, textarea, input, select):not(.aisp-icon-btn):not(.aisp-handle) { font-size: 14px !important; }
+/* 2026-09-10 Terrence: 3 個功能掣（通知/搜尋/Ask AI）喺標題側，右邊淨係留 close */
+.aisp-func-group { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+/* Ask AI = icon + 文字（pill 掣） */
+.aisp-func-ask {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 11px; flex-shrink: 0;
+  border: 1px solid var(--color-border); border-radius: 999px;
+  background: var(--color-surface-2); color: var(--color-text);
+  font-weight: 600; cursor: pointer;
+  transition: background 160ms, border-color 160ms, color 160ms;
+}
+.aisp-func-ask:hover { background: var(--color-surface-offset); }
+.aisp-func-ask.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+/* 2026-09-10 Terrence: tab 文字（通知/問AI/搜尋）改 icon-only 按鈕（只喺 panel head） */
+.aisp-func-group .aisp-icon-btn {
+  position: relative; width: 32px; height: 32px; flex-shrink: 0;
+  display: grid; place-items: center; padding: 0;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--color-text-muted); cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+}
+.aisp-func-group .aisp-icon-btn:hover { background: var(--color-surface-offset); color: var(--color-text); }
+.aisp-func-group .aisp-icon-btn.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+.aisp-icon-badge {
+  position: absolute; top: -3px; right: -3px; min-width: 15px; height: 15px;
+  padding: 0 3px; border-radius: 999px; background: var(--color-error, #e5484d);
+  color: #fff; font-size: 9px; font-weight: 700; line-height: 15px; text-align: center;
+}
+.aisp-head-actions { display: flex; align-items: center; gap: 8px; }
+.aisp-filters {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 20px 10px; flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.aisp-filter-chip {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  color: var(--color-text-muted); cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.aisp-filter-chip.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+/* v6.71: AI tab = real chat — session bar + message area + bottom composer */
+.aisp-chat { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.aisp-session-bar {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 20px 6px; flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.aisp-session-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  font-size: 12.5px; font-weight: 600; color: var(--color-text-muted);
+  cursor: pointer; font-family: inherit; flex-shrink: 0;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis;
+}
+.aisp-session-chip.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+.aisp-msg-area {
+  flex: 1; overflow-y: auto; padding: 0 20px 12px; min-height: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.aisp-msg-area .cb-msg-user, .aisp-msg-area .cb-msg-ai-row { margin: 0; }
+.aisp-msg-area .cb-msg-user { align-self: flex-end; max-width: 92%; }
+.aisp-msg-area .cb-msg-ai-row { align-self: flex-start; max-width: 92%; }
+/* v6.88: AI chat 訊息唔要框 — 移除 ai-card animated border + thinking pulse，
+   NEXUS AI 做對話者名（meta） */
+.aisp-msg-area .cb-msg-ai-body.ai-card::before,
+.aipage-msg-area .cb-msg-ai-body.ai-card::before,
+.cb-panel .cb-msg-ai-body.ai-card::before { display: none; }
+.aisp-msg-area .cb-msg-ai-body.ai-card.is-thinking,
+.aipage-msg-area .cb-msg-ai-body.ai-card.is-thinking,
+.cb-panel .cb-msg-ai-body.ai-card.is-thinking { animation: none; box-shadow: none; }
+.aisp-msg-area .aisp-input-row { display: none; }
+/* 2026-09-10 Terrence: composer（輸入框 + 內裡 2 個功能掣）＋ 框外橢圓發送掣 */
+.aisp-chat > .aisp-composer {
+  /* v6.85: flush to panel bottom — only safe-area inset (home indicator)
+     remains; previously 10px+inset left a visible gap above panel edge */
+  margin: 0 20px env(safe-area-inset-bottom);
+  flex-shrink: 0;
+}
+.aisp-search-col { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.aisp-search-col .aisp-input-row { flex-shrink: 0; }
+.aisp-tabs { display: flex; gap: 4px; flex-shrink: 0; }
+.aisp-tab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 5px 10px; border-radius: 999px; white-space: nowrap;
+  background: var(--color-surface-offset); border: 1px solid transparent;
+  font-size: 12px; font-weight: 700; color: var(--color-text-muted);
+  cursor: pointer; font-family: inherit; transition: all 150ms;
+}
+.aisp-tab.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+.aisp-tab-icon { font-size: 12px; }
+/* SPEC ai-butler-v2 T3: 通知 tab badge（tab 內紅點+數字） */
+.aisp-notif-badge {
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: #d43a4f; color: #fff; font-size: 9.5px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+}
+/* ── 管家概覽（overview）── */
+.aisp-overview { flex: 1; overflow-y: auto; padding: 10px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+.aisp-ov-greet { background: linear-gradient(135deg, var(--color-primary), #0a4c52); border-radius: 14px; padding: 16px 16px 14px; color: #fff; }
+.aisp-ov-hello { font-size: 19px; font-weight: 800; letter-spacing: .01em; }
+.aisp-ov-sub { font-size: 13px; opacity: .92; margin-top: 4px; line-height: 1.45; }
+.aisp-ov-date { font-size: 11.5px; font-weight: 600; color: var(--color-text-faint); margin-top: -4px; padding: 0 2px; }
+.aisp-ov-block {
+  display: flex; flex-direction: column; gap: 7px; width: 100%;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  border-radius: 12px; padding: 11px 13px; cursor: pointer; font-family: inherit; color: var(--color-text); text-align: left;
+}
+button.aisp-ov-block:active { transform: scale(.985); }
+.aisp-ov-block-head { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+.aisp-ov-block-head svg { color: var(--color-primary); }
+.aisp-ov-chev { margin-left: auto; font-size: 17px; color: var(--color-text-faint); }
+.aisp-ov-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-muted); padding-left: 22px; line-height: 1.35; }
+.aisp-ov-dot { width: 5px; height: 5px; border-radius: 999px; background: #d43a4f; flex-shrink: 0; }
+.aisp-ov-actions { display: flex; gap: 8px; margin-top: 2px; }
+.aisp-ov-chip {
+  flex: 1; padding: 9px 6px; border-radius: 999px; border: 1px solid var(--color-divider);
+  background: var(--color-surface); font-size: 12.5px; font-weight: 700; color: var(--color-text);
+  cursor: pointer; font-family: inherit; text-align: center;
+}
+.aisp-ov-chip:active { background: var(--color-surface-offset); }
+/* ── 通知 tab ── */
+.aisp-notif { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.aisp-notif-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 20px 8px; font-size: 12px; color: var(--color-text-muted); flex-shrink: 0; }
+.aisp-notif-readall { background: none; border: none; color: var(--color-primary); font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 4px; }
+.aisp-notif-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--color-text-faint); font-size: 14px; }
+.aisp-notif-list { flex: 1; overflow-y: auto; padding: 0 16px 14px; display: flex; flex-direction: column; gap: 7px; }
+.aisp-notif-item {
+  display: flex; align-items: flex-start; gap: 9px; width: 100%; text-align: left;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider); border-radius: 11px;
+  padding: 10px 12px; cursor: pointer; font-family: inherit; color: var(--color-text);
+}
+.aisp-notif-item.unread { border-left: 3px solid var(--color-primary); background: color-mix(in oklch, var(--color-primary) 5%, var(--color-surface)); }
+.aisp-notif-item-dot { width: 6px; height: 6px; border-radius: 999px; background: #d43a4f; margin-top: 6px; flex-shrink: 0; opacity: 0; }
+.aisp-notif-item.unread .aisp-notif-item-dot { opacity: 1; }
+.aisp-notif-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.aisp-notif-item-title { font-size: 13.5px; font-weight: 700; line-height: 1.35; }
+.aisp-notif-item-body { font-size: 12.5px; color: var(--color-text-muted); line-height: 1.4; }
+.aisp-notif-item-time { font-size: 11px; color: var(--color-text-faint); margin-top: 2px; }
+.aisp-notif-item-mark { font-size: 11px; color: var(--color-primary); font-weight: 700; flex-shrink: 0; margin-top: 3px; }
+
+/* 2026-09-10 Terrence: composer = 輸入框（內含 2 個 main-style 功能掣）+ 框外橢圓發送掣 */
+.aisp-composer { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* ⚠️ .aisp-input-row 係共用 class（chat / search / full page）— 保持原本外觀，
+   composer 專用嘅 override 喺下面（唔好再直接改呢條 rule，會整爛 search bar） */
+.aisp-input-row { display: flex; align-items: center; gap: 10px; background: var(--color-surface-offset); border-radius: 999px; padding: 12px 16px; margin: 0 20px 14px; flex-shrink: 0; }
+.aisp-input-row svg { width: 18px; height: 18px; color: var(--color-text-muted); flex-shrink: 0; }
+.aisp-input { flex: 1; background: none; border: none; outline: none; font-size: 15.5px; color: var(--color-text); font-family: inherit; min-width: 0; }
+/* composer 專用 override（只影響 AI chat 個輸入框，唔影響 search / full page） */
+.aisp-composer .aisp-input-row { flex: 1; gap: 8px; padding: 9px 12px 9px 16px; margin: 0; min-width: 0; }
+.aisp-composer .aisp-input-row .aisp-icon-btn {
+  width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center;
+  border: none; background: transparent; color: var(--color-text-muted);
+  cursor: pointer; flex-shrink: 0; transition: background 160ms, color 160ms;
+}
+.aisp-composer .aisp-input-row .aisp-icon-btn:hover { background: var(--color-surface); color: var(--color-text); }
+.aisp-composer .aisp-input-row .aisp-icon-btn svg { width: 18px; height: 18px; }
+/* ⚠️ base 版本（full-page AiPage composer + 其他位用）— AiSearchPanel 有自己 override */
+.aisp-icon-btn { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
+.aisp-icon-btn svg { width: 16px; height: 16px; }
+.aisp-icon-btn.mic, .aisp-icon-btn.send { background: var(--color-primary); }
+.aisp-icon-btn:disabled { opacity: 0.4; cursor: default; }
+/* 發送掣：喺輸入框「外」，橢圓形，primary 填色 */
+.aisp-send-btn {
+  width: 44px; height: 44px; border-radius: 999px; border: none;
+  background: var(--color-primary); color: var(--color-on-primary);
+  display: grid; place-items: center; flex-shrink: 0; cursor: pointer;
+  transition: background 160ms, opacity 160ms;
+}
+.aisp-send-btn:hover:not(:disabled) { background: var(--color-primary-hover, var(--color-primary)); }
+.aisp-send-btn:disabled { opacity: 0.4; cursor: default; }
+.aisp-send-btn .svc-icon { color: currentColor !important; }
+
+.aisp-body { padding-top: 0; }
+.aisp-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-faint); margin-bottom: 10px; }
+.aisp-capability { display: flex; align-items: flex-start; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--color-divider); }
+.aisp-capability:last-child { border-bottom: none; }
+.aisp-capability .icn {
+  width: 30px; height: 30px; border-radius: 10px;
+  background: var(--color-primary-highlight); color: var(--color-primary);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.aisp-capability .icn svg { width: 15px; height: 15px; }
+.aisp-capability strong { display: block; font-size: 13px; font-weight: 700; color: var(--color-text); }
+.aisp-capability span { font-size: 12px; color: var(--color-text-muted); line-height: 1.4; }
+.aisp-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.aisp-chip {
+  font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 999px;
+  background: var(--color-surface-offset); color: var(--color-text);
+  border: 1px solid var(--color-border); display: flex; align-items: center; gap: 6px;
+  cursor: pointer; font-family: inherit;
+}
+.aisp-chip svg { width: 13px; height: 13px; color: var(--color-primary); }
+.aisp-recent-item { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--color-divider); }
+.aisp-recent-item:last-child { border-bottom: none; }
+.aisp-recent-item svg { width: 16px; height: 16px; color: var(--color-text-faint); flex-shrink: 0; }
+.aisp-recent-item span { font-size: 13.5px; color: var(--color-text); }
+
+/* Search results */
+.aisp-result-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 11px 6px; border-radius: 10px; background: none; border: none;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
+.aisp-result-row:hover { background: var(--color-surface-offset); }
+.aisp-result-icon { font-size: 18px; width: 32px; text-align: center; flex-shrink: 0; }
+.aisp-result-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.aisp-result-text strong { font-size: 14px; color: var(--color-text); }
+.aisp-result-text small { font-size: 12px; color: var(--color-text-muted); }
+.aisp-result-type { font-size: 11px; color: var(--color-text-faint); background: var(--color-surface-offset); padding: 3px 8px; border-radius: 999px; flex-shrink: 0; }
+.aisp-thinking { display: flex; gap: 5px; padding: 20px 4px; }
+.aisp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); animation: aisp-bounce 1.2s infinite ease-in-out; }
+.aisp-dot:nth-child(2) { animation-delay: .15s; }
+.aisp-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes aisp-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5 } 40% { transform: translateY(-6px); opacity: 1 } }
+.aisp-reply {
+  background: var(--color-surface-offset); border-radius: 14px;
+  padding: 14px 16px; font-size: 14px; line-height: 1.6; color: var(--color-text);
+  border-left: 3px solid var(--color-primary); white-space: pre-wrap;
+}
+.aisp-empty { text-align: center; padding: 30px 0; color: var(--color-text-faint); font-size: 13px; }
+.aisp-error { font-size: 12px; color: var(--color-error); padding: 8px 4px; }
+
+/* ═══════════ Camera scan sheet ═══════════ */
+.cam-frame {
+  background: #111; border-radius: var(--radius-lg); aspect-ratio: 16/10;
+  position: relative; overflow: hidden; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cam-frame video { width: 100%; height: 100%; object-fit: cover; }
+.cam-card-outline {
+  width: 78%; height: 58%;
+  border: 2px dashed rgba(255,255,255,.55); border-radius: 10px; position: absolute;
+  pointer-events: none;
+}
+.cam-card-outline::before {
+  content: '名片 / Business Card'; position: absolute; top: -22px; left: 0;
+  font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600;
+}
+.cam-scan-line {
+  position: absolute; left: 6%; right: 6%; height: 2px;
+  background: var(--color-primary); box-shadow: 0 0 8px var(--color-primary);
+  animation: cam-scan 1.8s ease-in-out infinite; pointer-events: none;
+}
+@keyframes cam-scan { 0% { top: 22% } 50% { top: 78% } 100% { top: 22% } }
+.cam-shutter {
+  width: 100%; padding: 12px; border-radius: var(--radius-md);
+  background: var(--color-primary); color: var(--color-on-primary); border: none;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  margin-bottom: 14px;
+}
+.cam-shutter:disabled { opacity: 0.5; cursor: wait; }
+.cam-result {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 14px;
+}
+.cam-result-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cam-result-head svg { width: 16px; height: 16px; color: var(--color-success); }
+.cam-result-head span { font-size: 12.5px; font-weight: 700; color: var(--color-success); }
+.cam-field { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--color-divider); font-size: 13px; gap: 12px; }
+.cam-field:last-child { border-bottom: none; }
+.cam-field span:first-child { color: var(--color-text-muted); flex-shrink: 0; }
+.cam-field span:last-child { font-weight: 600; text-align: right; color: var(--color-text); }
+.cam-actions { display: flex; gap: 10px; margin-top: 14px; }
+.cam-actions button { flex: 1; padding: 15px 12px; min-height: 50px; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+/* iPhone home-indicator 手勢區會食咗貼底按鈕嘅 tap（「用呢張識別」好難撳）—
+   2026-09-10 Terrence 真機。加 safe-area 留白 + 加大 tap target。 */
+.cam-panel { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.cam-actions { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.cam-actions .save { background: var(--color-primary); color: var(--color-on-primary); }
+.cam-actions .retake { background: var(--color-surface-offset); color: var(--color-text); border: 1px solid var(--color-border); }
+
+/* Content clearance so fixed nav never covers content */
+/* v6.79: fullscreen pages fill nx2-content as a flex column (all
+   viewports) so their inner scroll areas (sp-body / aisp-msg-area)
+   own the scroll — previously min-height:100dvh let the page grow
+   with content, pushing the composer/scroller out of view */
+.nx2-content:has(.sp-page),
+.nx2-content:has(.aipage-page) {
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 768px) {
+  .nx2-content { padding-bottom: calc(var(--mnav-height) + 24px) !important; }
+  .nx2-main { min-height: 0; }
+  /* mobile: fullscreen pages have own sticky header + bottom clearance —
+     strip nx2-content padding so they truly fill the viewport */
+  .nx2-content:has(.sp-page),
+  .nx2-content:has(.aipage-page) { padding: 0 !important; }
+  /* AI entry on mobile = center nav button; hide the floating FAB so it
+     never overlaps the bottom nav (v6.69 Playwright probe 實證 intercepts) */
+  #ai-fab, .cb-fab { display: none !important; }
+  /* v6.70: mobile = 純 bottom nav 介面 — sidebar + top bar 完全隱藏，
+     功能已吸收落 工作區/紀錄/設定 sheets（flex layout 令 main 自動 full width）*/
+  .sbv2-sidebar, .hdr2-bar { display: none !important; }
+}
+@media (hover: none) {
+  .mnav-item:hover { color: var(--color-text-faint); }
+  .mnav-item.active:hover { color: var(--color-primary); }
+}
+
+/* ═══════════ Fullscreen Search page (v6.75) ═══════════ */
+/* v6.79: flex:1 + min-height:0 — fills nx2-content (flex column) instead
+   of min-height:100dvh which let the page grow with long content */
+.sp-page {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column;
+  background: var(--color-bg); max-width: 720px; margin: 0 auto;
+}
+.sp-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+  position: sticky; top: 0; background: var(--color-bg); z-index: 10;
+}
+.sp-back {
+  width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--color-text); font-family: inherit;
+}
+.sp-back svg { width: 18px; height: 18px; }
+.sp-input-wrap {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  border-radius: 999px; padding: 10px 14px; min-width: 0;
+}
+.sp-input-icon { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
+.sp-input { flex: 1; background: none; border: none; outline: none; font-size: 15.5px; color: var(--color-text); font-family: inherit; min-width: 0; }
+.sp-clear {
+  width: 24px; height: 24px; border-radius: 999px; border: none; cursor: pointer;
+  background: var(--color-divider); color: var(--color-text-muted);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;
+}
+.sp-clear svg { width: 13px; height: 13px; }
+.sp-filters {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 12px;
+  -webkit-overflow-scrolling: touch; flex-shrink: 0;
+}
+.sp-filter-chip {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  color: var(--color-text-muted); cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.sp-filter-chip.active { background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary); }
+.sp-body { flex: 1; padding: 4px 16px calc(var(--mnav-height) + env(safe-area-inset-bottom) + 20px); overflow-y: auto; }
+.sp-hint { text-align: center; padding: 60px 20px; color: var(--color-text-faint); }
+.sp-hint-icon { font-size: 40px; margin-bottom: 12px; }
+.sp-hint p { font-size: 14px; margin: 4px 0; }
+.sp-hint-sub { font-size: 12px !important; opacity: 0.8; }
+.sp-empty { text-align: center; padding: 40px 0; color: var(--color-text-faint); font-size: 13px; }
+.sp-result-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 12px 6px; border-radius: 10px; background: none; border: none;
+  cursor: pointer; font-family: inherit; text-align: left;
+  border-bottom: 1px solid var(--color-divider);
+}
+.sp-result-row:active { background: var(--color-surface-offset); }
+.sp-result-icon { font-size: 19px; width: 34px; text-align: center; flex-shrink: 0; }
+.sp-result-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.sp-result-text strong { font-size: 14px; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-result-text small { font-size: 12px; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-result-type { font-size: 11px; color: var(--color-text-faint); background: var(--color-surface-offset); padding: 3px 8px; border-radius: 999px; flex-shrink: 0; }
+
+/* ═══════════ Fullscreen AI page (v6.76) ═══════════ */
+/* v6.79: flex:1 + min-height:0 — fills nx2-content (flex column) instead
+   of min-height:100dvh which let the page grow with long content */
+.aipage-page {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column;
+  background: var(--color-bg); max-width: 720px; margin: 0 auto;
+}
+.aipage-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+  position: sticky; top: 0; background: var(--color-bg); z-index: 10;
+}
+.aipage-head h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--color-text); }
+.aipage-back {
+  width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+  background: var(--color-surface-offset); border: 1px solid var(--color-divider);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--color-text); font-family: inherit;
+}
+.aipage-back svg { width: 18px; height: 18px; }
+.aipage-chat { flex: 1; display: flex; flex-direction: column; min-height: 0; padding-bottom: calc(var(--mnav-height) + env(safe-area-inset-bottom) + 10px); }
+.aipage-chat .aisp-msg-area { flex: 1; }
+.aipage-chat .aisp-input-row { margin-bottom: 0; }
+.aipage-msg-area .cb-msg-user { align-self: flex-end; max-width: 92%; }
+.aipage-msg-area .cb-msg-ai-row { align-self: flex-start; max-width: 92%; }
+
+/* ═══ EntitySummaryCard — AI portal 共用 summary 卡（detail-pages-polish T1）═══ */
+.es-card {
+  border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+  background: color-mix(in oklch, var(--color-primary) 5%, var(--color-bg));
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.es-card-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.es-card-icon { font-size: 13px; }
+.es-card-title { font-size: 12px; font-weight: 800; color: var(--color-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.es-card-x { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--color-text-secondary); padding: 2px 4px; line-height: 1; }
+.es-card-body { font-size: 12.5px; line-height: 1.55; color: var(--color-text-primary); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.es-card-thinking { display: flex; gap: 5px; padding: 4px 0; }
+.es-card-empty { font-size: 12px; color: var(--color-text-secondary); }
+.es-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.es-tag { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; }
+.es-tag.opportunity { background: color-mix(in oklch, #2e9e6b 14%, transparent); color: #1f7a50; }
+.es-tag.risk { background: color-mix(in oklch, #d43a4f 12%, transparent); color: #b02a3c; }
+/* 2026-09-12：跟 app 自己嘅主題（data-theme），唔好跟 OS 偏好 —— 之前用
+   prefers-color-scheme 會令 OS 開深色嘅用戶，即使 app 設咗淺色都被改色。 */
+[data-theme="dark"] .es-tag.opportunity { color: #5fd6a0; }
+[data-theme="dark"] .es-tag.risk { color: #ff8fa0; }
+
+/* ═══ Namecard scan A+B（SPEC namecard-scan）═══ */
+.cam-card-outline { border: 1px solid rgba(255,255,255,.28); }
+.cam-corner { position: absolute; width: 22px; height: 22px; border: 0 solid #fff; pointer-events: none; filter: drop-shadow(0 0 3px rgba(0,0,0,.6)); }
+.cam-corner.tl { top: -1px; left: -1px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 8px; }
+.cam-corner.tr { top: -1px; right: -1px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 8px; }
+.cam-corner.bl { bottom: -1px; left: -1px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 8px; }
+.cam-corner.br { bottom: -1px; right: -1px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 8px; }
+.cam-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 600; color: #fff; background: rgba(0,0,0,.55);
+  padding: 3px 12px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+.cam-preview-img { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.cam-result-img { width: 100%; max-height: 180px; object-fit: contain; display: block; background: #000; }
+
+/* ── Subscription badge（aisp header — 2026-09-07） ── */
+.aisp-sub-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+.aisp-sub-badge.pro {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+.aisp-sub-badge.free {
+  background: #eef0f3;
+  color: #6b7280;
+  border: 1px solid #e3e6ea;
+}
+
+/* ── Cam-level 四角 detect（SPEC 2026-09-07）: guide 灰/綠 — 淨係 4 角 + 邊線變色 ── */
+.cam-card-outline {
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  transition: border-color 180ms ease;
+}
+.cam-card-outline .cam-corner {
+  border-color: #9CA3AF; /* gray — not aligned（guide §2） */
+  transition: border-color 180ms ease;
+}
+.cam-card-outline.aligned {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+.cam-card-outline.aligned .cam-corner {
+  border-color: #22C55E; /* green — aligned */
+}
+.cam-card-outline.aligned::before {
+  content: '已對齊 ✓';
+  color: #22C55E;
+}
+/* ── 對位框（2026-09-13 定稿）: 只有一條框 ──
+   框 = guide rect 本身（＝偵測用嗰條）；.cam-safe-inner 同佢完全重合（inset:0），
+   淨係負責「框外壓暗」。inset:0 係相對 parent padding box ⇒ parent 嘅 3px 虛線框
+   保持清晰、唔會被壓暗。*/
+.cam-safe-inner {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 1;
+  transition: box-shadow 180ms ease;
+}
+.cam-card-outline .cam-corner {
+  z-index: 2;
+}
+.cam-card-outline.aligned .cam-safe-inner {
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.16);
+}
+/* 舊標籤移除：框頂「名片 / Business Card」同 aligned「已對齊 ✓」
+   （同尺寸 chip、ok-pill 重複，而且兩者在同一個位置疊字） */
+.cam-card-outline::before,
+.cam-card-outline.aligned::before {
+  content: none;
+}
+.cam-size-chip {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  z-index: 3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 2px 8px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.cam-ok-pill {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 12px 3px 6px;
+  border-radius: 999px;
+  z-index: 3;
+  pointer-events: none;
+  animation: cam-ok-pop 180ms ease;
+  white-space: nowrap;
+}
+/* 3s 自動拍攝倒數 — 綠色圓環收窄（動畫，無數字） */
+.cam-count-ring {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+/* ── 微調（ManualCorners）確認制 — 2026-09-10 Terrence: 之前冇 CSS（要
+   .cam-actions .save 父層）→ 用戶以為冇確認制 ── */
+.mc-actions {
+  pointer-events: none;
+}
+.mc-confirm {
+  pointer-events: auto;
+  min-width: 200px;
+  padding: 13px 26px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-confirm:disabled { opacity: .6; }
+.mc-confirm:active { transform: scale(.98); }
+@keyframes cam-ok-pop {
+  from { transform: translateX(-50%) scale(0.7); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+.cam-shutter.ready {
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.5), 0 4px 14px rgba(34, 197, 94, 0.3);
+}
+.cam-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cam-engine-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ── Cam-level detect v2（2026-09-07 Terrence 真機反饋）: guide 大框 + 粗邊 + 綠色明顯 ── */
+.cam-card-outline {
+  border: 3px dashed rgba(255, 255, 255, 0.55); /* 粗 1 倍（1.5 → 3px） */
+  border-radius: 12px;
+}
+.cam-card-outline .cam-corner {
+  width: 34px;
+  height: 34px;
+  border-width: 6px; /* 粗 1 倍（3 → 6px） */
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.65));
+}
+.cam-card-outline.aligned {
+  border-color: rgba(34, 197, 94, 0.9); /* 實色綠邊（唔再 0.55 淡） */
+  box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.7), 0 0 22px rgba(34, 197, 94, 0.5); /* glow — 對齊一眼睇到 */
+}
+.cam-card-outline.aligned .cam-corner {
+  border-color: #22C55E;
+  filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.9));
+}
+/* 逐隻角到位即變綠（2026-09-10 Terrence）— 引導用戶遂隻角放入框 */
+.cam-card-outline .cam-corner.ok {
+  border-color: #22C55E;
+  filter: drop-shadow(0 0 7px rgba(34, 197, 94, 0.95));
+}

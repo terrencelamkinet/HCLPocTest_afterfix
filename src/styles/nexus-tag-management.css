@@ -1,0 +1,76 @@
+
+/* ═══════════════════════════════════════════════════════
+   nexus-tag-management.css — Tag Management Center (2026 AI-era)
+   ═══════════════════════════════════════════════════════ */
+
+.tg-page { padding: var(--space-6); overflow-y: auto; height: 100%; background: var(--color-bg); }
+.tg-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-5); flex-wrap: wrap; gap: var(--space-3); }
+.tg-subtitle { font-size: 13px; color: var(--color-text-secondary); margin: 4px 0 0; }
+.tg-header-actions { display: flex; gap: var(--space-2); }
+
+/* AI cleanup card — signature 2026 pattern: proactive, dismissible, glanceable */
+.tg-ai-card {
+  border-radius: var(--radius-card); border: 1px solid rgba(124,92,252,.25);
+  background: linear-gradient(135deg, rgba(124,92,252,.08), rgba(59,130,246,.05));
+  padding: var(--space-4); margin-bottom: var(--space-5);
+}
+.tg-ai-card-header { display: flex; align-items: center; gap: var(--space-3); }
+.tg-ai-icon {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--ai-glow-1), var(--ai-glow-2));
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.tg-ai-title { font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); }
+.tg-ai-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
+.tg-ai-suggestions { margin-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.tg-ai-suggestion-row {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-elevated); border-radius: var(--radius-btn); border: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.tg-ai-suggestion-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 200px; }
+.tg-ai-arrow { color: var(--color-text-secondary); font-size: 13px; }
+.tg-ai-suggestion-reason { font-size: 11.5px; color: var(--color-text-secondary); flex-basis: 100%; }
+
+/* New tag inline form */
+.tg-new-form { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
+.tg-new-form .input-field { flex: 1; min-width: 180px; }
+.tg-color-picker { display: flex; gap: 6px; }
+.tg-color-picker.inline { gap: 4px; }
+.tg-color-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform var(--duration-fast) var(--ease-out); }
+.tg-color-dot.small { width: 14px; height: 14px; }
+.tg-color-dot:hover { transform: scale(1.15); }
+.tg-color-dot.active { border-color: #fff; box-shadow: 0 0 0 2px var(--color-bg); }
+
+/* Tag grid */
+.tg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); }
+.tg-card {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface-elevated);
+  transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+.tg-card:hover { border-color: var(--color-primary); }
+.tg-card.merge-mode { cursor: pointer; }
+.tg-card.selected { border-color: var(--color-primary); background: rgba(37,99,235,.08); }
+.tg-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tg-card-body { flex: 1; min-width: 0; }
+.tg-card-label { font-size: 13.5px; font-weight: 600; color: var(--color-text-primary); }
+.tg-card-count { font-size: 11.5px; color: var(--color-text-secondary); margin-top: 2px; }
+.tg-card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* ═══ Responsive: Tablet / Mobile ═══ */
+@media (max-width: 1023px) {
+  .tg-page { padding: var(--space-5); }
+  .tg-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .tg-color-picker.inline { display: none; } /* hide inline swatches on touch — use dedicated edit sheet */
+}
+@media (max-width: 767px) {
+  .tg-page { padding: var(--space-4); }
+  .tg-header { flex-direction: column; align-items: stretch; }
+  .tg-header-actions { width: 100%; }
+  .tg-header-actions .nx-btn { flex: 1; justify-content: center; }
+  .tg-grid { grid-template-columns: 1fr; }
+  .tg-ai-suggestion-row { flex-direction: column; align-items: stretch; }
+  .tg-new-form { flex-direction: column; align-items: stretch; }
+  .tg-new-form .tg-color-picker { justify-content: center; }
+}

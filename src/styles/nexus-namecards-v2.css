@@ -1,0 +1,416 @@
+
+/* ═══════════════════════════════════════════════════════
+   nexus-namecards-v2.css — Name Card Gallery Redesign
+   ═══════════════════════════════════════════════════════ */
+
+.nc-page { display: flex; flex-direction: column; height: 100%; background: var(--color-bg); }
+
+/* ═══ Header: title + quick upload dropzone + view toggle + search/filter ═══ */
+.nc-header { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border); }
+.nc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
+.nc-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+.nc-title-count { font-size: 13px; color: var(--color-text-secondary); font-weight: 500; margin-left: 8px; }
+.nc-header-actions { display: flex; gap: var(--space-2); align-items: center; }
+
+/* Quick upload dropzone — drag & drop / click / paste / camera */
+.nc-dropzone {
+  border: 2px dashed var(--color-border); border-radius: var(--radius-card);
+  padding: var(--space-5); text-align: center; cursor: pointer; position: relative;
+  transition: border-color var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out);
+  background: var(--color-surface-elevated);
+}
+.nc-dropzone:hover, .nc-dropzone.drag-active { border-color: var(--color-primary); background: rgba(37,99,235,0.05); }
+.nc-dropzone-icon {
+  width: 44px; height: 44px; border-radius: 50%; margin: 0 auto var(--space-3);
+  background: linear-gradient(135deg, var(--ai-glow-1), var(--ai-glow-2));
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.nc-dropzone-title { font-size: 13.5px; font-weight: 600; color: var(--color-text-primary); }
+.nc-dropzone-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; }
+.nc-dropzone-methods { display: flex; gap: var(--space-2); justify-content: center; margin-top: var(--space-3); }
+.nc-quick-btn {
+  display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+  min-height: var(--btn-h-sm); min-width: var(--btn-h-sm); padding: 6px 12px; border-radius: var(--radius-btn); border: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-text-primary); cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+.nc-quick-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.nc-quick-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+/* quick-method button text label — hidden on mobile (icon-only), visible on desktop + tooltip title */
+.nc-quick-label { display: inline; }
+/* Generic button label (inner pages: DetailModal / TagManagement / BulkUpload) —
+   same pattern: mobile icon-only, desktop text + title tooltip. Added 2026-08-14. */
+.nc-btn-label { display: inline; }
+@media (max-width: 640px) {
+  .nc-dropzone-methods { gap: var(--space-1); }
+  .nc-quick-btn { padding: 8px 10px; } /* bigger touch area, icon-only */
+  .nc-quick-btn .nc-quick-label { display: none; }
+  /* inner-page buttons: icon-only on mobile to prevent overflow/wrapping */
+  /* 2026-09-12（#5）：其實係 .nc-search-input 嘅 min-width: 200px 撐爆 header row */
+  .nc-search-input { min-width: 0; }
+  .nc-filter-row .nc-search-wrap { min-width: 0; }
+  .nc-btn-label { display: none; }
+  .nx-btn { gap: 4px; } /* tighter icon-only spacing */
+  .nc-detail-footer { flex-wrap: nowrap; }
+  .nc-detail-footer-left { gap: 4px; }
+  .nc-image-actions .nx-btn { min-width: 0; padding: 6px 8px; }
+  /* 2026-09-12 Terrence：drop image 區太佔位（令下面 name card 區太小）→
+     mobile 完全去掉個 drop 箱（虛線框／大圖示／文案），只留一行 icon-only 快速掣
+     （拍照／相簿／貼上／批量）— 上載主入口係右上角 icon 掣。 */
+  .nc-dropzone { border: none; padding: 0; background: none; text-align: left; margin-bottom: 10px !important; }
+  .nc-dropzone-icon, .nc-dropzone-title, .nc-dropzone-sub { display: none; }
+  .nc-dropzone-methods { margin-top: 0; justify-content: flex-start; }
+  /* 2026-09-12 Terrence：search 收成 icon，撳 icon 才彈出輸入框。
+     注意：呢個 block 喺 base 定義之前，所以一定要用 .nc-filter-row 開頭（2 個 class）先贏得到。 */
+  .nc-filter-row .nc-search-toggle { display: flex; }
+  .nc-filter-row .nc-search-wrap { display: none; }
+  /* 2026-09-13 Terrence（真 bug 修）：舊版 search 一開就 `display:none` 咗 toggle
+     ⇒ 唯一嘅關閉入口消失，走唔到 search mode ✗；而且 input 同 tag chips 迫喺同一行
+     （390px 實測只剩 6px 距離）⇒ 撞埋其他掣。
+     新版：toggle 保持可見（做關閉掣）；tag filter 開 search 時換行去下一行，唔再迫埋。 */
+  .nc-filter-row.search-open .nc-search-toggle { display: flex; }
+  .nc-filter-row.search-open .nc-search-wrap { display: block; flex: 1; min-width: 0; }
+  .nc-filter-row.search-open .nc-tag-filter { flex-basis: 100%; }
+}
+
+/* Filter/search row */
+.nc-filter-row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.nc-search-wrap { position: relative; flex: 1; min-width: 200px; }
+/* 2026-09-12 Terrence：mobile 將 search 收成 icon（撳 icon 才顯示輸入框） */
+.nc-search-toggle {
+  display: none; align-items: center; justify-content: center;
+  width: var(--btn-h-sm); height: var(--btn-h-sm); flex-shrink: 0; cursor: pointer;
+  border: 1px solid var(--color-border); border-radius: var(--radius-btn);
+  background: var(--color-surface); color: var(--color-text-secondary);
+}
+.nc-search-toggle:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.nc-search-input {
+  flex: 1; min-width: 200px; height: 38px; padding: 0 14px; border-radius: var(--radius-btn);
+  border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-primary); font-size: 13px;
+}
+.nc-tag-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.nc-tag-chip {
+  font-size: 12px; font-weight: 600; min-height: var(--btn-h-xs); padding: 5px 12px; border-radius: var(--radius-badge);
+  border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary);
+  cursor: pointer; transition: all var(--duration-fast) var(--ease-out); display: flex; align-items: center; gap: 5px;
+}
+.nc-tag-chip:hover { border-color: var(--color-primary); }
+.nc-tag-chip.active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+.nc-view-toggle { display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-btn); overflow: hidden; }
+.nc-view-btn { width: var(--btn-h-sm); height: var(--btn-h-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--color-text-secondary); background: var(--color-surface); }
+.nc-view-btn.active { background: var(--color-primary); color: var(--color-on-primary); }
+/* 2026-09-13：同上（全域 .svc-icon 蓋過 color:#fff）—— 呢幾個係彩色／深色底白字，
+   icon 一定要白：（青綠底 2.20:1 → 11.84:1；相片暗罩 rgba(15,17,23,.75) 3.5:1 → 18.9:1） */
+.nc-view-btn.active .svc-icon,
+.nc-image-tab.active .svc-icon,
+.nc-tag-chip.active .svc-icon,
+.nc-card-quick-btn .svc-icon { color: currentColor !important; }
+/* 2026-09-13：帶語意色嘅狀態（綠=已連結、橙=未連結、青綠=active tab）——
+   icon 要跟字色，唔好維持全域藍（實測 `.nc-card-linked` 綠字 rgb(22,163,74) 配藍 icon
+   = 語意唔一致）。用 currentColor 令 icon 永遠跟返自己嘅 color（hover 都跟）。 */
+.nc-card-linked .svc-icon,
+.nc-card-unlinked .svc-icon,
+.nc-module-tab.active .svc-icon { color: currentColor !important; }
+
+/* ═══ Gallery grid ═══ */
+.nc-gallery-body { flex: 1; overflow-y: auto; padding: var(--space-6); }
+.nc-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); }
+.nc-gallery-grid.list-view { grid-template-columns: 1fr; gap: var(--space-2); }
+
+.nc-card {
+  border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface-elevated);
+  overflow: hidden; cursor: pointer; position: relative;
+  transition: transform var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+}
+.nc-card:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 12px 24px rgba(0,0,0,0.18); }
+.nc-card-checkbox { position: absolute; top: 8px; left: 8px; z-index: 2; width: 18px; height: 18px; accent-color: var(--color-primary); }
+.nc-card-img-wrap { position: relative; aspect-ratio: 1.58/1; background: var(--color-bg); overflow: hidden; }
+.nc-card-img { width: 100%; height: 100%; object-fit: cover; }
+.nc-card-dup-badge {
+  position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: var(--radius-badge); background: rgba(245,158,11,0.9); color: #fff; display: flex; align-items: center; gap: 3px;
+}
+.nc-card-quick-actions {
+  position: absolute; bottom: 6px; right: 6px; display: flex; gap: 4px; opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.nc-card:hover .nc-card-quick-actions { opacity: 1; }
+.nc-card-quick-btn {
+  width: var(--btn-h-xs); height: var(--btn-h-xs); border-radius: 7px; background: rgba(15,17,23,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
+}
+.nc-card-quick-btn:hover { background: var(--color-primary); }
+.nc-card-body { padding: var(--space-3); }
+.nc-card-name { font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-card-meta { font-size: 11.5px; color: var(--color-text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-card-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.nc-card-tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: var(--radius-badge); background: rgba(124,92,252,0.1); color: var(--ai-glow-1); }
+.nc-card-linked { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--color-success); margin-top: 6px; font-weight: 600; }
+.nc-card-unlinked { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--color-text-secondary); margin-top: 6px; }
+
+/* List view row */
+.nc-gallery-grid.list-view .nc-card { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); }
+.nc-gallery-grid.list-view .nc-card-img-wrap { width: 64px; aspect-ratio: 1.58/1; border-radius: 8px; flex-shrink: 0; }
+.nc-gallery-grid.list-view .nc-card-body { flex: 1; padding: 0; }
+.nc-gallery-grid.list-view .nc-card-quick-actions { position: static; opacity: 1; margin-left: auto; }
+
+/* Bulk action bar */
+.nc-bulk-bar {
+  position: sticky; bottom: 0; margin: 0 calc(-1 * var(--space-6)); padding: var(--space-3) var(--space-6);
+  background: var(--color-surface-elevated); border-top: 1px solid var(--color-border);
+  display: flex; align-items: center; gap: var(--space-3); box-shadow: 0 -8px 24px rgba(0,0,0,0.12);
+}
+.nc-bulk-count { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
+
+/* ═══ Detail Modal: Original vs Cropped image compare ═══ */
+.nc-detail-modal { max-width: 920px; width: 92vw; }
+.nc-detail-modal-body { display: flex; gap: var(--space-5); padding: var(--space-5); max-height: 78vh; overflow-y: auto; }
+.nc-detail-images { width: 380px; flex-shrink: 0; }
+.nc-image-tabs { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }
+.nc-image-tab {
+  flex: 1; text-align: center; padding: 7px 0; font-size: 12px; font-weight: 600; border-radius: var(--radius-btn);
+  background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; border: 1px solid var(--color-border);
+}
+.nc-image-tab.active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+.nc-image-frame {
+  border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--color-border);
+  background: var(--color-bg); aspect-ratio: 1.58/1; display: flex; align-items: center; justify-content: center;
+}
+.nc-image-frame img { width: 100%; height: 100%; object-fit: contain; }
+.nc-image-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+.nc-detail-fields { flex: 1; min-width: 0; }
+.nc-detail-field-row { display: flex; gap: var(--space-3); margin-bottom: var(--space-3); }
+.nc-detail-field-row .nx-field { flex: 1; }
+.nc-detail-tags-edit { display: flex; gap: 6px; flex-wrap: wrap; margin-top: var(--space-2); }
+.nc-tag-editable {
+  display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 4px 10px;
+  border-radius: var(--radius-badge); background: rgba(124,92,252,0.1); color: var(--ai-glow-1);
+}
+.nc-tag-remove { cursor: pointer; opacity: .6; }
+.nc-tag-remove:hover { opacity: 1; }
+.nc-tag-add-input {
+  font-size: 11.5px; border: 1px dashed var(--color-border); border-radius: var(--radius-badge);
+  padding: 4px 10px; background: transparent; color: var(--color-text-primary); width: 90px;
+}
+.nc-link-contact-box {
+  margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-card);
+  background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.2);
+}
+.nc-link-contact-linked { display: flex; align-items: center; gap: var(--space-3); }
+.nc-link-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--color-primary); color: var(--color-on-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.nc-detail-footer { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-border); }
+.nc-detail-footer-left { display: flex; gap: var(--space-2); }
+.nc-btn-danger-ghost { color: var(--color-danger); background: transparent; border: 1px solid var(--color-border); }
+.nc-btn-danger-ghost:hover { border-color: var(--color-danger); background: rgba(239,68,68,0.06); }
+
+/* ═══ Empty state ═══ */
+.nc-empty { text-align: center; padding: var(--space-10) var(--space-4); }
+.nc-empty-icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto var(--space-4); background: var(--color-surface-elevated); display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); }
+
+/* ═══ Mobile ═══ */
+@media (max-width: 767px) {
+  .nc-header { padding: var(--space-3) var(--space-4); }
+  .nc-gallery-body { padding: var(--space-4); padding-bottom: calc(var(--mnav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px); }
+  .nc-gallery-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+  .nc-detail-modal-body { flex-direction: column; max-height: 82vh; }
+  .nc-detail-images { width: 100%; }
+  .nc-dropzone { padding: var(--space-4); }
+  .nc-filter-row { gap: var(--space-2); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   nexus-bulk-upload.css — Bulk Upload Queue Page
+   ═══════════════════════════════════════════════════════ */
+
+.nc-bulk-page { display: flex; flex-direction: column; height: 100%; background: var(--color-bg); padding: var(--space-6); overflow-y: auto; }
+.nc-bulk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-3); }
+.nc-bulk-stats { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.nc-stat-pill { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-badge); background: var(--color-surface-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.nc-stat-pill.success { color: var(--color-success); border-color: rgba(34,197,94,.3); }
+.nc-stat-pill.warn { color: #f59e0b; border-color: rgba(245,158,11,.3); }
+.nc-stat-pill.danger { color: var(--color-danger); border-color: rgba(239,68,68,.3); }
+
+.nc-bulk-dropzone {
+  border: 2px dashed var(--color-border); border-radius: var(--radius-card);
+  padding: var(--space-8) var(--space-6); text-align: center; cursor: pointer;
+  background: var(--color-surface-elevated); margin-bottom: var(--space-4);
+  transition: border-color var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out);
+}
+.nc-bulk-dropzone:hover, .nc-bulk-dropzone.drag-active { border-color: var(--color-primary); background: rgba(37,99,235,0.05); }
+
+.nc-batch-tag-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
+.nc-batch-tag-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary); flex-shrink: 0; }
+
+.nc-bulk-queue { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); flex: 1; }
+.nc-queue-row {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface-elevated);
+}
+.nc-queue-thumb { width: 52px; height: 34px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--color-bg); }
+.nc-queue-info { flex: 1; min-width: 0; }
+.nc-queue-name { font-size: 13px; font-weight: 600; color: var(--color-text-primary); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-queue-meta { font-size: 11.5px; color: var(--color-text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-queue-dup-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: #f59e0b; background: rgba(245,158,11,.12); padding: 1px 6px; border-radius: var(--radius-badge); flex-shrink: 0; }
+.nc-queue-progress-track { height: 3px; border-radius: 2px; background: var(--color-border); margin-top: 6px; overflow: hidden; }
+.nc-queue-progress-fill { height: 100%; background: var(--color-primary); transition: width .3s ease; }
+.nc-queue-status-icon { width: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nc-queue-spinner, .nc-queue-spinner-idle {
+  width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--color-border);
+}
+.nc-queue-spinner { border-top-color: var(--color-primary); animation: nx-spin 0.7s linear infinite; }
+@keyframes nx-spin { to { transform: rotate(360deg); } }
+
+.nc-bulk-actions {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: var(--space-3);
+  padding: var(--space-3) 0; border-top: 1px solid var(--color-border); background: var(--color-bg);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS — Desktop / Tablet / Mobile
+   Design tokens: Desktop ≥1024px · Tablet 768–1023px · Mobile ≤767px
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Tablet (iPad portrait/landscape, Android tablets) ── */
+@media (max-width: 1023px) {
+  .nc-bulk-page { padding: var(--space-5); }
+  .nc-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .nc-detail-modal-body { gap: var(--space-4); }
+  .nc-detail-images { width: 300px; }
+  .nc-filter-row { flex-wrap: wrap; }
+  /* 2026-09-13 Terrence（真 bug 修）：「add icon 跌一格」真兇就係呢行。
+     actions 可以 wrap，而 390px 實測 actions 只有 127px 闊（title 因 min-width:auto
+     死撐 204px 唔肯縮），但兩個掣加埋 ~140px ⇒ ＋掣被擠落第二行 ✗。
+     改 nowrap + flex-shrink:0（兩個掣一定同一行），同時准 title 縮（title 自己換行）。 */
+  .nc-header-actions { flex-wrap: nowrap; flex-shrink: 0; }
+  .nc-title { min-width: 0; }
+}
+
+/* ── Mobile (phones, ≤767px) ── */
+@media (max-width: 767px) {
+  .nc-bulk-page { padding: var(--space-4); }
+  .nc-bulk-header { flex-direction: column; align-items: flex-start; }
+  .nc-bulk-dropzone { padding: var(--space-6) var(--space-4); }
+  .nc-queue-row { flex-wrap: wrap; }
+  .nc-queue-thumb { width: 44px; height: 30px; }
+  .nc-batch-tag-row { flex-direction: column; align-items: flex-start; }
+  .nc-bulk-actions { flex-direction: column-reverse; }
+  .nc-bulk-actions .nx-btn { width: 100%; justify-content: center; }
+}
+
+/* ── Small mobile (≤375px, e.g. iPhone SE) ── */
+@media (max-width: 375px) {
+  .nc-gallery-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+  .nc-card-name { font-size: 12px; }
+  .nc-card-meta { font-size: 10.5px; }
+}
+
+/* ── Touch target enforcement across all breakpoints ≤1023px ── */
+@media (max-width: 1023px) {
+  .nc-quick-btn, .nc-tag-chip, .nc-view-btn { min-height: var(--btn-h-lg); }
+  .nc-card-checkbox { width: 20px; height: 20px; }
+  .nc-card-quick-actions { opacity: 1; } /* no hover on touch devices — always visible */
+}
+
+/* ═══ Pending area（WORKFLOW-2026-09 — duplicated records 等處理）═══ */
+.nc-pending-section { background: rgba(245,158,11,.06); border: 1px solid rgba(245,158,11,.25); border-radius: var(--radius-lg, 14px); padding: 14px; margin-bottom: 18px; }
+.nc-pending-head { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; color: #b45309; margin-bottom: 4px; }
+.nc-pending-count { background: #f59e0b; color: #fff; font-size: 11px; border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+.nc-pending-hint { font-weight: 400; font-size: 11.5px; color: var(--color-text-secondary, #6c6860); margin-left: auto; }
+.nc-pending-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.nc-pending-card { display: flex; align-items: center; gap: 12px; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e5e2dc); border-radius: 12px; padding: 8px 10px; cursor: pointer; transition: border-color .15s; }
+.nc-pending-card:hover { border-color: #f59e0b; }
+.nc-pending-img { width: 54px; height: 36px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: #eee; }
+.nc-pending-noimg { width: 54px; height: 36px; border-radius: 6px; background: #f3f1ec; display: flex; align-items: center; justify-content: center; color: #b0aca2; flex-shrink: 0; }
+.nc-pending-info { flex: 1; min-width: 0; }
+.nc-pending-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-pending-cand { font-size: 11.5px; color: #b45309; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-resolve-bar { margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); }
+.nc-resolve-title { font-size: 12.5px; font-weight: 700; color: #b45309; margin-bottom: 10px; }
+.nc-resolve-actions { display: flex; gap: 8px; }
+.nc-resolve-actions .nx-btn { height: 36px; font-size: 12.5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+@media (max-width: 600px) { .nc-pending-hint { display: none; } .nc-resolve-actions { flex-direction: column; } }
+
+/* ═══ 新增名片 bottom sheet（2026-09-13 Terrence：四個上載方式收入 popup）═══ */
+/* 桌面拖放區：mobile 唔顯示（四個方式已入 popup）；桌面保留做 drag target */
+.nc-dropzone-slim { display: none; }
+@media (min-width: 768px) {
+  .nc-dropzone-slim { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 14px; }
+  .nc-dropzone-slim .nc-dropzone-icon, .nc-dropzone-slim .nc-dropzone-sub, .nc-dropzone-slim .nc-dropzone-methods { display: none; }
+  .nc-dropzone-slim .nc-dropzone-title { font-size: 12.5px; margin: 0; }
+}
+/* 上載進度／錯誤 — mobile 冇 dropzone 都要見到 feedback */
+.nc-upload-status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.4;
+  padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
+.nc-upload-status.is-uploading { background: rgba(27, 59, 75, .07); color: var(--color-text-secondary, #6c6860); }
+.nc-upload-status.is-error { background: rgba(212, 58, 79, .09); color: var(--color-danger, #d43a4f); }
+/* sheet：z-index 要高過全域底部 nav（800/900，見 KB-027/035） */
+.nc-sheet-scrim { position: fixed; inset: 0; z-index: 1001; background: rgba(0, 0, 0, .42);
+  display: flex; align-items: flex-end; justify-content: center; }
+.nc-sheet { position: relative; z-index: 1002; width: 100%; max-width: 480px;
+  background: var(--color-surface, #fff); border-radius: 16px 16px 0 0;
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, .18); animation: nc-sheet-up .18s ease-out; }
+@keyframes nc-sheet-up { from { transform: translateY(14px); opacity: .55 } to { transform: translateY(0); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .nc-sheet { animation: none; } }
+.nc-sheet-title { font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary, #6c6860); padding: 8px 10px 10px; }
+.nc-sheet-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: var(--btn-h-lg, 44px);
+  padding: 0 12px; background: transparent; border: 0; border-radius: 10px;
+  font-size: 14.5px; font-weight: 600; color: var(--color-text, #232323); cursor: pointer; text-align: left; }
+.nc-sheet-item:hover { background: rgba(0, 0, 0, .045); }
+.nc-sheet-item .svc-icon { color: var(--color-text-secondary, #6c6860); flex-shrink: 0; }
+.nc-sheet-cancel { display: flex; align-items: center; justify-content: center; width: 100%;
+  min-height: var(--btn-h-lg, 44px); margin-top: 6px; background: transparent; border: 0;
+  border-top: 1px solid var(--color-border, #e5e2dc); font-size: 14px; font-weight: 600;
+  color: var(--color-text-secondary, #6c6860); cursor: pointer; }
+
+/* ═══ 重複卡並排欄位對照（2026-09-13，v4 MD suggestion T5）═══ */
+.nc-cmp { margin-top: 12px; border: 1px solid var(--color-border, #e5e2dc); border-radius: 10px; overflow: hidden; }
+.nc-cmp-row { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 8px; align-items: start;
+  padding: 7px 10px; font-size: 12px; border-top: 1px solid var(--color-border, #e5e2dc); }
+.nc-cmp-row:first-child { border-top: 0; }
+.nc-cmp-head { background: rgba(27, 59, 75, .05); font-weight: 700; color: var(--color-text-secondary, #6c6860); }
+.nc-cmp-label { color: var(--color-text-secondary, #6c6860); font-weight: 600; }
+.nc-cmp-val { color: var(--color-text, #232323); word-break: break-word; }
+.nc-cmp-row.is-diff { background: rgba(245, 158, 11, .09); }
+.nc-cmp-row.is-diff .nc-cmp-val { font-weight: 700; color: #b45309; }
+.nc-cmp-reason { padding: 8px 10px; font-size: 11.5px; line-height: 1.45; color: var(--color-text-secondary, #6c6860);
+  background: rgba(27, 59, 75, .04); border-top: 1px solid var(--color-border, #e5e2dc); }
+@media (max-width: 480px) { .nc-cmp-row { grid-template-columns: 48px 1fr 1fr; gap: 6px; padding: 6px 8px; font-size: 11.5px; } }
+
+/* ═══ 2026-09-13 Terrence：details page 手機版「走曬位」修（v4 README mobile 規格）═══
+   README 要求：dialogs 變 92dvh bottom sheet、sticky action bar respect safe-area、
+   form input 16px 防 iOS focus zoom。舊版係 centred modal（92vw + max-height 82vh）✗ */
+@media (max-width: 768px) {
+  .nc-detail-modal {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    width: 100%; max-width: none; height: 92dvh; max-height: 92dvh;
+    border-radius: 18px 18px 0 0; display: flex; flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .nc-detail-modal-body {
+    flex: 1 1 auto; max-height: none; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nc-detail-footer {
+    position: sticky; bottom: 0; flex-shrink: 0;
+    background: var(--color-surface-elevated, #fff);
+    border-top: 1px solid var(--color-border, #E5E7EB);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  /* iOS：input < 16px 會令 focus 時版面被強制放大 */
+  .nc-detail-modal input, .nc-detail-modal .input-field, .nc-detail-modal .nc-tag-add-input { font-size: 16px; }
+  /* resolve 兩粒掣：舊版 min 高度靠 token（而 token 唔存在）⇒ 實測 20/18px，補一道保險 */
+  .nc-resolve-actions .nx-btn { min-height: 44px; font-size: 13px; padding: 0 14px; }
+  .nc-tag-editable { min-height: 44px; }
+  /* 關閉掣：實測 40×40 <44（WCAG 2.5.8） */
+  .nc-detail-modal .nx-modal-x { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+/* tag 移除掣：舊版係 <span> ✗（tap target 太細 + 唔可以 keyboard focus） */
+.nc-tag-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; min-height: 26px; padding: 0; margin-left: 2px;
+  background: none; border: 0; color: inherit; font: inherit; line-height: 1;
+  cursor: pointer; border-radius: 6px;
+}
+.nc-tag-remove:hover { background: rgba(0, 0, 0, .08); }
+.nc-modal-x { cursor: pointer; }

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# GG shared pre-commit（core.hooksPath=.githooks）
+#
+# 只擋「一定會爆 runtime」同「唔應該入 git」嘅嘢，唔做 style 檢查。
+# rule 1：KB-040 undefined name（刪咗定義但留返 call site → 靜默 500）
+# rule 2：secret / 私鑰唔准入 git（2026-09-15 AppScan 修正）
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+# ── rule 2：secret 檢查（所有 staged 檔）──────────────────────────────
+bash "$ROOT/scripts/check_secrets.sh" || exit 1
+
+# ── rule 1：undefined name（只掃 backend Python）─────────────────────
+STAGED="$(git diff --cached --name-only --diff-filter=ACM | grep -E '^backend/.*\.py$' || true)"
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+# shellcheck disable=SC2086
+bash "$ROOT/scripts/check_undefined_names.sh" $STAGED

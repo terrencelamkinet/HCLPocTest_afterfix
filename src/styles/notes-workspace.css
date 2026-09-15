@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Notes Workspace v2 — 3-pane (rail / list / editor)
+
+   T1.3  3-pane workspace、rail collapse、list / card / compact 檢視、
+         搜尋、排序、釘選
+   T1.4  NexusEditor 編輯器 + checklist 持久化 + Zen mode（全頁）
+   SPEC: docs/notes-module-v2-SPEC.md（§5 P1 user stories、§11 T1.3/T1.4）
+
+   全部顏色走 design token（--color-*），dark mode 唔需要另寫 override。
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 全高頁：拆走 shell 嘅 scroll padding，由 panes 自己管 scroll ──
+   mobile-nav-v3.css 有 `.nx2-content{padding-bottom:...!important}`（≤768px），
+   所以呢邊都要 !important 先壓得住；:has() specificity 本身已高於單 class。 */
+.nx2-content:has(.nw-page) { padding: 0 !important; overflow: hidden; }
+
+.nw-page { height: 100%; display: flex; background: var(--color-bg); min-width: 0; }
+
+/* ═══ 左 rail ═══ */
+.nw-rail {
+  width: 236px; flex-shrink: 0; display: flex; flex-direction: column;
+  background: var(--color-surface); border-right: 1px solid var(--color-divider);
+  overflow: hidden; transition: width .2s cubic-bezier(.4, 0, .2, 1);
+}
+.nw-rail.is-collapsed { width: 68px; }
+
+.nw-rail-head {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 12px 10px 12px 14px; border-bottom: 1px solid var(--color-divider);
+}
+.nw-rail-title {
+  flex: 1; min-width: 0; font-size: 11px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--color-text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nw-rail-nav { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.nw-rail-foot { flex-shrink: 0; padding: 8px; border-top: 1px solid var(--color-divider); }
+
+.nw-rail-item {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0;
+  padding: 8px 10px; border: none; border-radius: 10px; background: none;
+  color: var(--color-text); font: inherit; font-size: 13.5px; text-align: left;
+  cursor: pointer; transition: background .12s ease;
+}
+.nw-rail-item:hover { background: var(--color-surface-offset); }
+.nw-rail-item.is-active { background: var(--color-blue-highlight); color: var(--color-blue); font-weight: 700; }
+.nw-rail-item:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.nw-rail-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.nw-rail-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-rail-count { flex-shrink: 0; font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.nw-rail-item.is-active .nw-rail-count { color: inherit; opacity: .72; }
+
+/* Collapse → icon-only rail（只留色點 + 件數） */
+.nw-rail.is-collapsed .nw-rail-title,
+.nw-rail.is-collapsed .nw-rail-name { display: none; }
+.nw-rail.is-collapsed .nw-rail-head { justify-content: center; padding: 12px 0; }
+.nw-rail.is-collapsed .nw-rail-item { justify-content: center; gap: 0; padding: 9px 0; flex-direction: column; }
+.nw-rail.is-collapsed .nw-rail-count { font-size: 10px; }
+
+/* ═══ 中列表 ═══ */
+.nw-list {
+  width: 330px; flex-shrink: 0; display: flex; flex-direction: column; min-width: 0;
+  background: var(--color-surface); border-right: 1px solid var(--color-divider);
+}
+.nw-list-head { flex-shrink: 0; padding: 14px 14px 10px; border-bottom: 1px solid var(--color-divider); }
+.nw-list-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; min-width: 0; }
+.nw-list-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-list-sub { margin-top: 2px; font-size: 11.5px; color: var(--color-text-muted); }
+.nw-toolbar { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+
+/* Search — 跟 house standard `hdr2-search-wrap`（44px / radius 10 / surface /
+   1px border / focus primary）但做真 input 版 */
+.nw-search {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;
+  height: 44px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text-muted); transition: border-color .15s ease;
+}
+.nw-search:hover, .nw-search:focus-within { border-color: var(--color-primary); }
+.nw-search input {
+  flex: 1; min-width: 0; border: none; background: none; outline: none;
+  font: inherit; font-size: 13.5px; color: var(--color-text);
+}
+
+.nw-icon-btn {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 34px; height: 34px; border: none; border-radius: 9px; background: none;
+  color: var(--color-text-muted); cursor: pointer; transition: background .12s ease, color .12s ease;
+}
+.nw-icon-btn:hover { background: var(--color-surface-offset); color: var(--color-text); }
+.nw-icon-btn.is-active { background: var(--color-blue-highlight); color: var(--color-blue); }
+.nw-icon-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.nw-icon-btn.is-danger:hover { background: var(--color-error-highlight); color: var(--color-error); }
+/* 白 icon 落彩色底：.svc-icon 全域 color:var(--color-blue) 要壓返白（AGENTS pitfall #1） */
+.nw-new-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0;
+  height: 34px; padding: 0 12px; border: none; border-radius: 9px;
+  background: var(--color-primary); color: var(--color-on-primary); font: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: background .15s ease;
+}
+.nw-new-btn:hover { background: var(--color-primary-hover); }
+.nw-new-btn .svc-icon { color: currentColor !important; }
+
+.nw-view-switch { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--color-surface-offset); flex-shrink: 0; }
+.nw-view-switch .nw-icon-btn { width: 30px; height: 30px; }
+.nw-view-switch .nw-icon-btn.is-active { background: var(--color-surface); color: var(--color-blue); }
+
+.nw-list-body { flex: 1; overflow-y: auto; padding: 8px; }
+.nw-list-body.is-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; align-content: start; }
+
+/* ── note row（list view） ── */
+.nw-note {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; min-width: 0;
+  padding: 10px 12px; border: 1px solid transparent; border-radius: 10px;
+  background: none; color: var(--color-text); font: inherit; text-align: left;
+  cursor: pointer; transition: background .12s ease, border-color .12s ease;
+}
+.nw-note:hover { background: var(--color-surface-offset); }
+.nw-note.is-active { background: var(--color-blue-highlight); border-color: color-mix(in oklch, var(--color-blue) 35%, transparent); }
+.nw-note:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+/* a11y：note row 本來係 role=button 包住 pin 掣（nested-interactive）。
+   而家 row = 純容器，真正嘅開筆記掣係呢個 <button> → 要 reset 返 button 預設樣式。 */
+.nw-note-main {
+  flex: 1; min-width: 0; background: none; border: none; padding: 0;
+  font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 8px;
+}
+.nw-note-main:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.nw-note-name {
+  display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nw-note-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-note-snippet {
+  margin-top: 3px; font-size: 12px; color: var(--color-text-muted); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nw-note-meta { margin-top: 5px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-muted); } /* a11y：faint→muted 過 AA 對比（2026-09-13） */
+/* 2026-09-14（用戶報 All Notes 有啲走位）：meta 內嘅 inline SVG（link icon）冇 vertical-align
+   → 同 11px 文字基線唔對齊。改成 inline-flex 令 icon 同文字中線對齊。 */
+.nw-note-meta > span { display: inline-flex; align-items: center; gap: 4px; }
+.nw-pin-btn {
+  flex-shrink: 0; width: 26px; height: 26px; border: none; border-radius: 7px; background: none;
+  color: var(--color-text-faint); cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.nw-pin-btn:hover { background: var(--color-surface); color: var(--color-text); }
+.nw-pin-btn.is-pinned { color: var(--color-gold); }
+/* 2026-09-14：`.svc-icon { color: var(--color-blue) }`（index.css）係全域 rule，會蓋過
+   上面 faint／gold → pin 掣永遠藍色，pinned 狀態睇唔出。高 specificity 壓返 currentColor
+   （同 AGENTS.md pitfall #1 同一類）。 */
+.nw-pin-btn .svc-icon { color: currentColor !important; }
+
+/* card view */
+.nw-list-body.is-cards .nw-note { flex-direction: column; min-height: 108px; }
+.nw-list-body.is-cards .nw-note-name { -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; white-space: normal; }
+.nw-list-body.is-cards .nw-note-snippet { -webkit-line-clamp: 3; }
+
+/* compact view */
+.nw-list-body.is-compact { padding: 6px 8px; }
+.nw-list-body.is-compact .nw-note { padding: 6px 10px; align-items: center; }
+.nw-list-body.is-compact .nw-note-snippet,
+.nw-list-body.is-compact .nw-note-meta { display: none; }
+
+.nw-empty { padding: 28px 18px; text-align: center; font-size: 12.5px; color: var(--color-text-muted); line-height: 1.6; }
+
+/* ═══ 右編輯器 ═══ */
+.nw-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--color-bg); }
+.nw-ed-head { flex-shrink: 0; padding: 14px 18px 10px; border-bottom: 1px solid var(--color-divider); background: var(--color-surface); }
+.nw-title-input {
+  width: 100%; border: none; background: none; outline: none; font: inherit;
+  font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--color-text);
+}
+.nw-title-input::placeholder { color: var(--color-text-faint); }
+.nw-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: var(--color-text-muted); }
+.nw-meta-select {
+  border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface);
+  font: inherit; font-size: 11.5px; color: var(--color-text); padding: 4px 6px; max-width: 190px;
+}
+.nw-spacer { flex: 1; }
+/* 2026-09-11 用戶：margin 收窄、書寫空間加大。
+   側邊 padding 18 → 6（連 .nxe-content 嘅 34/10，總橫向 inset 由 64/26 收到 40/16）。
+   加 :has() 令 editor 填滿 pane 高度 —— .nxe-content 本身 max-height:480px，
+   喺 ~700px 高嘅 pane 度白白蝕 40% 垂直空間。 */
+.nw-ed-body { flex: 1; overflow-y: auto; padding: 8px 6px 24px; }
+.nw-ed-body:has(.nxe-root) { display: flex; flex-direction: column; }
+.nw-ed-body .nxe-root { flex: 1; min-height: 0; }
+.nw-ed-body .nxe-content-wrap { flex: 1; min-height: 0; }
+.nw-ed-body .nxe-content { max-height: none; }
+.nw-ed-empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 30px; text-align: center; color: var(--color-text-muted); font-size: 13px;
+}
+
+/* 連結 record chip（T3.1 @mention / +Link） */
+.nw-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.nw-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px;
+  background: var(--color-blue-highlight); color: var(--color-blue); font-size: 11.5px; font-weight: 600;
+  border: 1px solid color-mix(in oklch, var(--color-blue) 25%, transparent);
+}
+.nw-chip button { border: none; background: none; color: inherit; cursor: pointer; padding: 0; font-size: 11px; line-height: 1; }
+
+/* ═══ Zen mode（全頁編輯器） ═══ */
+.nw-page.is-zen .nw-rail, .nw-page.is-zen .nw-list { display: none; }
+/* 2026-09-14（用戶報「全頁」冇真正全屏、個框可以再大啲）：原本 zen 內容欄寫死 760px，
+   同 SPEC（docs/notes-module-v2-SPEC.md：編輯器 1194/1440 寬）唔一致 → 放寬到 1194px。 */
+.nw-page.is-zen .nw-ed-body { padding: 24px max(24px, calc((100% - 1194px) / 2)) 120px; }
+.nw-page.is-zen .nw-ed-head { padding-left: max(24px, calc((100% - 1194px) / 2)); padding-right: max(24px, calc((100% - 1194px) / 2)); }
+
+/* ═══ Mobile drawer（rail 變 overlay；list ↔ editor 兩層切換） ═══ */
+.nw-scrim {
+  position: fixed; inset: 0; z-index: 29; border: none; padding: 0; cursor: pointer;
+  background: oklch(0.15 0 0 / .4); opacity: 0; visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.nw-page.is-rail-open .nw-scrim { opacity: 1; visibility: visible; }
+.nw-back-btn { display: none; }
+
+@media (max-width: 900px) {
+  .nw-page { position: relative; }
+
+  .nw-rail {
+    position: absolute; top: 0; bottom: 0; left: 0; z-index: 30;
+    width: 80%; max-width: 290px; transform: translateX(-100%);
+    transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+  .nw-rail.is-open { transform: none; }
+  /* mobile 唔用 collapsed 態 — 開就係全 drawer */
+  .nw-rail.is-collapsed { width: 80%; }
+  .nw-rail.is-collapsed .nw-rail-title,
+  .nw-rail.is-collapsed .nw-rail-name { display: block; }
+  .nw-rail.is-collapsed .nw-rail-item { flex-direction: row; justify-content: flex-start; gap: 9px; padding: 8px 10px; }
+  .nw-rail.is-collapsed .nw-rail-count { font-size: 11px; }
+  .nw-rail.is-collapsed .nw-rail-head { justify-content: flex-start; padding: 12px 10px 12px 14px; }
+
+  .nw-list { width: 100%; border-right: none; }
+  .nw-editor { display: none; }
+  .nw-page.is-mobile-editor .nw-list { display: none; }
+  .nw-page.is-mobile-editor .nw-editor { display: flex; }
+  .nw-back-btn { display: flex; }
+  .nw-view-switch { display: none; }
+
+  /* Zen 喺手機冇意義（rail/list 本來就係 toggle） */
+  .nw-page.is-zen .nw-list { display: none; }
+  .nw-page.is-zen .nw-editor { display: flex; }
+  .nw-page.is-zen .nw-ed-body { padding: 16px 16px 100px; }
+  .nw-page.is-zen .nw-ed-head { padding-left: 16px; padding-right: 16px; }
+
+  /* bottom nav 係 fixed overlay — 每個 scroll 容器自己留 clearance（AGENTS pitfall） */
+  .nw-rail-nav,
+  .nw-list-body,
+  .nw-ed-body { padding-bottom: calc(var(--mnav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px); }
+}
+
+@media (max-width: 420px) {
+  .nw-new-btn span { display: none; }
+  .nw-new-btn { width: 34px; padding: 0; }
+}
+
+/* ═══ Skeleton loading（2026-09-11 review T-06 / F-03）═══
+   取代純文字「載入中…」，避免跳 notebook／搜尋時畫面閃空白。
+   用 design token + prefers-reduced-motion 尊重系統設定。 */
+@keyframes nw-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+.nw-skeleton {
+  display: block; border-radius: var(--radius-sm, .375rem);
+  background: linear-gradient(90deg,
+    var(--color-surface-offset) 25%,
+    var(--color-surface) 50%,
+    var(--color-surface-offset) 75%);
+  background-size: 200% 100%;
+  animation: nw-shimmer 1.5s ease-in-out infinite;
+}
+.nw-skeleton-list { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.nw-skeleton-row { display: flex; flex-direction: column; gap: 7px; padding: 12px; }
+.nw-skeleton-line { height: 10px; }
+.nw-skeleton-line.w40 { width: 40%; }
+.nw-skeleton-line.w70 { width: 70%; }
+.nw-skeleton-line.w95 { width: 95%; }
+.nw-skeleton-ed { padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+.nw-skeleton-title { height: 24px; width: 45%; margin-bottom: 4px; }
+@media (prefers-reduced-motion: reduce) { .nw-skeleton { animation: none; } }
+
+/* 儲存失敗 banner — render 喺 editor pane（list pane 喺 mobile 係隱藏嘅） */
+.nw-save-error {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--color-error-highlight); color: var(--color-error);
+}
+
+/* ═══ Stage B/C（2026-09-11）：撤銷刪除 / 衝突 / 版本紀錄 ═══ */
+
+/* 樂觀鎖衝突 banner（T-02）— 同 save-error 唔同色系，因為要用戶揀邊個版本 */
+.nw-conflict {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+  padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--color-warning-highlight, #fef3c7); color: var(--color-warning, #b45309);
+}
+.nw-btn-sm {
+  border: 1px solid currentColor; background: transparent; color: inherit;
+  font: inherit; font-size: 11.5px; font-weight: 700; padding: 3px 9px;
+  border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.nw-btn-sm:hover { background: rgba(0,0,0,.06); }
+.nw-btn-sm.is-ghost { border-style: dashed; opacity: .85; }
+
+/* 撤銷刪除 bar（T-04）— 固定喺底部中央，手機都要見到（要避開 bottom nav） */
+.nw-undo-bar {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 60; display: flex; align-items: center; gap: 14px;
+  max-width: min(92vw, 460px);
+  padding: 10px 12px 10px 16px; border-radius: 12px;
+  background: var(--color-text, #111); color: var(--color-bg, #fff);
+  box-shadow: 0 12px 30px -8px rgba(0,0,0,.45);
+  font-size: 13px; font-weight: 600;
+  animation: nw-undo-in .18s ease-out;
+}
+@keyframes nw-undo-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.nw-undo-bar > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-undo-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  background: none; border: none; color: inherit; font: inherit; font-weight: 800;
+  cursor: pointer; padding: 4px 6px; border-radius: 6px; text-decoration: underline;
+}
+.nw-undo-btn:hover { background: rgba(255,255,255,.14); }
+@media (max-width: 900px) { .nw-undo-bar { bottom: calc(var(--mnav-height, 64px) + 14px + env(safe-area-inset-bottom, 0px)); } }
+
+/* 版本紀錄 drawer（T-03）— 右側 slide-over */
+.nw-drawer-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.28); border: none; padding: 0; cursor: pointer; }
+.nw-history {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 71;
+  width: min(360px, 92vw); display: flex; flex-direction: column;
+  background: var(--color-surface); border-left: 1px solid var(--color-border);
+  box-shadow: -14px 0 34px -10px rgba(0,0,0,.3);
+}
+.nw-history-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--color-divider); font-size: 14px;
+}
+.nw-history-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; flex: 1; }
+.nw-history-item {
+  padding: 10px 11px; border-radius: 10px; border: 1px solid var(--color-divider);
+  margin-bottom: 8px; display: flex; flex-direction: column; gap: 5px;
+}
+.nw-history-meta { display: flex; align-items: baseline; gap: 8px; }
+.nw-history-v { font-size: 11px; font-weight: 800; color: var(--color-primary); }
+.nw-history-time { font-size: 11px; color: var(--color-text-faint); }
+.nw-history-title { font-size: 13px; font-weight: 700; color: var(--color-text); }
+.nw-history-prev { font-size: 11.5px; color: var(--color-text-muted); line-height: 1.45; }
+.nw-history-item .nw-btn-sm { align-self: flex-start; color: var(--color-primary); }
+
+/* Stage D (T-10) 增量載入 sentinel */
+.nw-load-more { display: flex; justify-content: center; padding: 14px 8px 18px; }
+.nw-load-more .nw-btn-sm { color: var(--color-primary); }
+.nw-load-more-txt { font-size: 12px; font-weight: 600; color: var(--color-text-faint); }
+
+/* 建立筆記：範本揀選器（只在 create 嗰刻出現，唔佔 dashboard）— 2026-09-11 */
+.nw-tpl-sheet {
+  position: fixed; z-index: 72; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(420px, 92vw); max-height: min(78vh, 620px); overflow-y: auto;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 14px; box-shadow: 0 24px 60px -18px rgba(0,0,0,.4); padding: 6px 6px 10px;
+}
+.nw-tpl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px 10px; }
+.nw-tpl-blank {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 11px 12px; border-radius: 10px; border: 1px dashed var(--color-primary);
+  background: transparent; color: var(--color-primary); font: inherit; font-weight: 700; cursor: pointer;
+}
+.nw-tpl-blank:hover { background: rgba(0,0,0,.04); }
+.nw-tpl-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.nw-tpl-item {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px; width: 100%;
+  text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid transparent;
+  background: transparent; font: inherit; cursor: pointer; color: var(--color-text);
+}
+.nw-tpl-item:hover { background: rgba(0,0,0,.04); border-color: var(--color-divider); }
+.nw-tpl-item:disabled { opacity: .6; cursor: default; }
+.nw-tpl-name { font-size: 13.5px; font-weight: 700; }
+.nw-tpl-cat { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; } /* a11y：faint→muted 過 AA（2026-09-13） */
+.nw-tpl-new { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding: 10px 10px 4px; border-top: 1px solid var(--color-divider); }
+.nw-tpl-input {
+  flex: 1; min-width: 0; height: 32px; padding: 0 10px; border-radius: 8px;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text); font: inherit; font-size: 13px;
+}
+.nw-tpl-new .nw-btn-sm { color: var(--color-primary); }
+.nw-tpl-msg { margin: 8px 12px 0; font-size: 12px; color: var(--color-error); }
